@@ -1,0 +1,21 @@
+runs_directory: "runs"
+iterations:
+  max_iterations: 10
+  success_threshold: 95
+
+comfyui:
+  api_url: "http://localhost:8188"
+  output_dir: "comfyui_outputs"
+
+ollama:
+  vision_model: "llama3.2-vision"
+  text_model: "llama3"
+  api_url: "http://localhost:11434/api/generate"
+
+logs:
+  directory: "logs"
+  
+analysis_prompt: |
+  Analyze the generated image and provide specific feedback on how to improve the prompt
+  to better match the original goal. Consider composition, object details, colors, and
+  any missing elements. Respond with concise bullet points.

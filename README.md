@@ -27,7 +27,7 @@ An automated system for iterative text-to-image generation using ComfyUI and AI-
 
 1. **Clone Repository**
 ```bash
-git clone https://github.com/yourusername/iterative-image-generation.git
+git clone https://github.com/meanin2/iterative-image-generation.git
 cd iterative-image-generation
 ```
 

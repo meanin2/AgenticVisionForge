@@ -5,81 +5,50 @@ from datetime import datetime
 from src.orchestrator import run_iterations
 
 def parse_arguments():
-    """Parse command-line arguments"""
-    parser = argparse.ArgumentParser(description="Iterative Image Generation System")
-    parser.add_argument(
-        "--goal", 
-        type=str,
-        required=True,
-        help="Primary objective for image generation (e.g., 'A cyberpunk cityscape')"
-    )
-    parser.add_argument(
-        "--run_name", 
-        type=str,
-        default=None,
-        help="Custom name for this generation run (default: timestamp)"
-    )
-    parser.add_argument(
-        "--max_iterations",
-        type=int,
-        default=None,
-        help="Override maximum number of iterations from config"
-    )
-    parser.add_argument(
-        "--output_dir",
-        type=str,
-        default=None,
-        help="Custom output directory override"
-    )
+    parser = argparse.ArgumentParser(description="Iterative Image Generation with ComfyUI + Ollama")
+    parser.add_argument("--goal", type=str, required=True,
+                        help="Describe the image you want to generate")
+    parser.add_argument("--run_name", type=str,
+                        help="Optional custom run directory name")
+    parser.add_argument("--max_iterations", type=int,
+                        help="Override max_iterations from config.yaml")
+    parser.add_argument("--output_dir", type=str,
+                        help="Override comfyui output_dir from config.yaml")
     return parser.parse_args()
 
 def load_config():
-    """Load configuration from YAML file"""
     with open("config.yaml", "r") as f:
         return yaml.safe_load(f)
 
 def setup_directories(config, run_name):
-    """Create directory structure for the run"""
     runs_dir = config.get("runs_directory", "runs")
     run_path = os.path.join(runs_dir, run_name)
-    
-    dirs_to_create = [
-        run_path,
-        os.path.join(run_path, "logs"),
-        os.path.join(run_path, "generations"),
-        os.path.join(run_path, "analyses")
-    ]
-    
-    for dir_path in dirs_to_create:
-        os.makedirs(dir_path, exist_ok=True)
-        
+
+    os.makedirs(run_path, exist_ok=True)
+    os.makedirs(os.path.join(run_path, "logs"), exist_ok=True)
+    os.makedirs(os.path.join(run_path, "generations"), exist_ok=True)
+    os.makedirs(os.path.join(run_path, "analyses"), exist_ok=True)
+
     return run_path
 
 def main():
-    # Parse command-line arguments
     args = parse_arguments()
-    
-    # Load configuration
     config = load_config()
-    
-    # Apply command-line overrides
-    if args.max_iterations:
+
+    # Apply CLI overrides
+    if args.max_iterations is not None:
         config["iterations"]["max_iterations"] = args.max_iterations
-    if args.output_dir:
+    if args.output_dir is not None:
         config["comfyui"]["output_dir"] = args.output_dir
-    
-    # Create run identifier
+
     run_name = args.run_name or datetime.now().strftime("%Y%m%d-%H%M%S")
-    
-    # Set up directory structure
     run_directory = setup_directories(config, run_name)
-    
-    # Update config paths with run-specific directories
+
+    # Update config for this run
     config["comfyui"]["output_dir"] = os.path.join(run_directory, "generations")
     config["logs"]["directory"] = os.path.join(run_directory, "logs")
-    
-    # Start the iteration process
+
     run_iterations(config, args.goal, run_directory)
 
 if __name__ == "__main__":
-    main()
+    main() 

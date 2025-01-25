@@ -1,21 +1,88 @@
 runs_directory: "runs"
+
 iterations:
   max_iterations: 10
-  success_threshold: 95
+  success_threshold: 90  # 0-100 score from the vision model, if you wish
 
 comfyui:
   api_url: "http://localhost:8188"
   output_dir: "comfyui_outputs"
 
-ollama:
-  vision_model: "llama3.2-vision"
-  text_model: "llama3"
-  api_url: "http://localhost:11434/api/generate"
+# Vision model configuration
+vision:
+  provider: "gemini"  # can be "ollama" or "gemini"
+  ollama:
+    model: "llama3.2-vision"
+    api_url: "http://localhost:11434/api/generate"
+  gemini:
+    model: "gemini-2.0-flash-exp"
+    api_key: "AIzaSyAcFgInBOudkmJQ2W9snvTiDT3-KdPEnpo"
+
+# Text model configuration
+text:
+  provider: "gemini"  # can be "ollama" or "gemini"
+  ollama:
+    model: "deepseek-r1:8b"
+    api_url: "http://localhost:11434/api/generate"
+    strip_think_tags: true
+  gemini:
+    model: "gemini-2.0-flash-exp"
+    api_key: "AIzaSyAcFgInBOudkmJQ2W9snvTiDT3-KdPEnpo"
+
+# Prompting configuration
+prompts:
+  goal_understanding: |
+    I want you to help me generate a detailed T5 prompt for Flux image generation based on this goal: {goal}
+    
+    Please analyze the goal and create a comprehensive prompt that includes:
+    
+    1. Key Components Analysis:
+    - Main subjects and their details (appearance, pose, expression, etc.)
+    - Setting specifics (location, time of day, architecture)
+    - Lighting conditions and effects
+    - Color palette and important contrasts
+    - Composition elements (foreground, middle ground, background)
+    - Overall mood and atmosphere
+    
+    2. Technical Considerations:
+    - Remember to use only positive descriptions (what should be present)
+    - Aim for high detail while staying under 512 tokens
+    - Focus on natural language descriptions
+    
+    3. Suggested T5 Prompt:
+    Provide a detailed, natural language description incorporating all the above elements.
+    
+    Format your response with the analysis first, followed by the T5 prompt on its own line at the end.
+
+  analysis: |
+    Please analyze how well this image matches the user's goal: {goal}
+    
+    Consider:
+    1. Main Elements:
+    - Are all key subjects present and properly detailed?
+    - Does the setting match the intended scene?
+    - How well are lighting and colors executed?
+    
+    2. Composition:
+    - Is the scene arranged effectively?
+    - How's the balance between foreground, middle ground, and background?
+    - Are focal points clear and well-placed?
+    
+    3. Mood and Impact:
+    - Does it capture the intended atmosphere?
+    - What emotions does it evoke?
+    
+    Then suggest refinements to the T5 prompt, focusing on:
+    - Adding missing details
+    - Enhancing existing elements
+    - Improving composition
+    - Strengthening mood
+    
+    Remember to maintain positive descriptions only.
 
 logs:
   directory: "logs"
-  
+
 analysis_prompt: |
-  Analyze the generated image and provide specific feedback on how to improve the prompt
-  to better match the original goal. Consider composition, object details, colors, and
-  any missing elements. Respond with concise bullet points.
+  Please analyze the provided image for how well it matches the user's goal. 
+  Mention any key objects, style, and composition aspects. Then provide suggestions for refining the prompt. 

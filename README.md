@@ -109,6 +109,44 @@
        success_threshold: 90
      ```
 
+### Setting Up Custom Workflows
+
+You can use your own ComfyUI workflows with this tool. Here's how to set up a custom workflow:
+
+1. **Design Your Workflow in ComfyUI**:
+   - Build your workflow as normal in the ComfyUI interface
+   - Make sure your workflow includes these essential nodes:
+     - A `CLIPTextEncode` node for the prompt
+     - A `SaveImage` node for output
+     - A `RandomNoise` node (or any node with a `noise_seed` input)
+
+2. **Prepare the Prompt Node**:
+   - Find your `CLIPTextEncode` node
+   - Set its text input to exactly: `PROMPT_PLACEHOLDER`
+   - This is where the tool will insert generated prompts
+
+3. **Export the Workflow**:
+   - Click the "Save (API Format)" button in ComfyUI
+   - This will download a JSON file
+   - Copy the contents of this file to `comfyui_prompt_template.json`
+
+4. **Verification**:
+   The tool will automatically find the required nodes in your workflow by looking for:
+   - Any `CLIPTextEncode` node containing `PROMPT_PLACEHOLDER`
+   - Any `SaveImage` node for saving the output
+   - A random seed node (identified by):
+     - Class type `RandomNoise`, or
+     - Title containing "Random", or
+     - Any node with a `noise_seed` input
+
+5. **Error Messages**:
+   If your workflow is missing any required components, you'll see helpful error messages like:
+   - "No CLIPTextEncode node with PROMPT_PLACEHOLDER found..."
+   - "No SaveImage node found in workflow"
+   - "No random seed node found..."
+
+This flexible setup allows you to use any workflow structure as long as it includes these basic components. The tool will automatically adapt to your workflow's node IDs and configuration.
+
 ---
 
 ## Usage

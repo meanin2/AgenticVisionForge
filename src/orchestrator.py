@@ -35,16 +35,30 @@ def calculate_prompt_similarity(prompt1, prompt2):
     """Calculate how similar two prompts are using difflib."""
     return difflib.SequenceMatcher(None, prompt1, prompt2).ratio()
 
-def evaluate_quality(analysis, current_prompt, previous_prompt, config, iteration):
+def evaluate_quality(analysis, current_prompt, previous_prompt, config, iteration, previous_analyses=None):
     """
     Evaluate the quality of the current iteration and decide whether to continue.
     Returns (should_continue, reason)
     """
-    # Always continue for the first 3 iterations
-    if iteration < 3:
-        return True, "Continuing for minimum iterations"
+    if previous_analyses is None:
+        previous_analyses = []
 
-    # Check for explicit success phrases
+    # First iteration: Baseline analysis
+    if iteration == 1:
+        return True, "Initial iteration establishing baseline image and prompt effectiveness"
+
+    # Second iteration: Comparative analysis
+    if iteration == 2:
+        prompt_changes = analyze_prompt_differences(previous_prompt, current_prompt)
+        image_impact = compare_analyses(previous_analyses[-1], analysis)
+        return True, f"Analyzing prompt-to-image relationship: {prompt_changes} resulted in {image_impact}"
+
+    # Third iteration: Learning and synthesis
+    if iteration == 3:
+        synthesis = synthesize_learning(previous_analyses, analysis, previous_prompt, current_prompt)
+        return True, f"Synthesizing learnings from previous iterations: {synthesis}"
+
+    # After third iteration: Comprehensive evaluation
     success_phrases = [
         "perfectly matches",
         "excellent match",
@@ -53,9 +67,9 @@ def evaluate_quality(analysis, current_prompt, previous_prompt, config, iteratio
         "outstanding representation"
     ]
     if any(phrase in analysis.lower() for phrase in success_phrases):
-        return False, "Analysis indicates perfect match"
+        return False, "Analysis indicates perfect match based on comprehensive evaluation"
 
-    # Check if we're still making substantial improvements
+    # Check for substantial improvements needed
     improvement_phrases = [
         "could be improved",
         "needs adjustment",
@@ -64,9 +78,99 @@ def evaluate_quality(analysis, current_prompt, previous_prompt, config, iteratio
         "should include"
     ]
     if not any(phrase in analysis.lower() for phrase in improvement_phrases):
-        return False, "No substantial improvements suggested"
+        return False, "No substantial improvements needed after thorough analysis"
 
-    return True, "Continuing iterations for further improvements"
+    return True, "Continuing iterations based on identified areas for enhancement"
+
+def analyze_prompt_differences(prev_prompt, curr_prompt):
+    """Analyze how the prompt changed and what we're testing."""
+    if not prev_prompt:
+        return "Initial prompt exploration"
+    
+    # Split prompts into words for comparison
+    prev_words = set(prev_prompt.lower().split())
+    curr_words = set(curr_prompt.lower().split())
+    
+    added = curr_words - prev_words
+    removed = prev_words - curr_words
+    
+    changes = []
+    if added:
+        changes.append(f"Added emphasis on: {', '.join(added)}")
+    if removed:
+        changes.append(f"Reduced emphasis on: {', '.join(removed)}")
+    
+    return "; ".join(changes) if changes else "Refined existing elements"
+
+def compare_analyses(prev_analysis, curr_analysis):
+    """Compare how the image changed based on the analyses."""
+    if not prev_analysis:
+        return "Initial image assessment"
+    
+    # Look for key phrases indicating changes
+    improvements = []
+    regressions = []
+    
+    # Common improvement indicators
+    better_phrases = ["better", "improved", "enhanced", "stronger", "clearer"]
+    worse_phrases = ["less", "weaker", "reduced", "lost", "missing"]
+    
+    for phrase in better_phrases:
+        if phrase in curr_analysis.lower():
+            improvements.append(phrase)
+    
+    for phrase in worse_phrases:
+        if phrase in curr_analysis.lower():
+            regressions.append(phrase)
+    
+    if improvements and not regressions:
+        return f"Improvements noted in: {', '.join(improvements)}"
+    elif regressions and not improvements:
+        return f"Regressions noted in: {', '.join(regressions)}"
+    elif improvements and regressions:
+        return f"Mixed results: improved {', '.join(improvements)} but regressed in {', '.join(regressions)}"
+    else:
+        return "Subtle changes with no clear improvement or regression"
+
+def synthesize_learning(prev_analyses, curr_analysis, prev_prompt, curr_prompt):
+    """Synthesize what we've learned from the first three iterations."""
+    if len(prev_analyses) < 2:
+        return "Insufficient data for synthesis"
+    
+    # Analyze prompt evolution
+    prompt_evolution = analyze_prompt_differences(prev_prompt, curr_prompt)
+    
+    # Look for patterns in the analyses
+    consistent_issues = []
+    improvements = []
+    
+    # Common phrases to track
+    issue_phrases = ["missing", "lacks", "needs", "could use", "should have"]
+    improvement_phrases = ["better", "improved", "enhanced", "stronger", "clearer"]
+    
+    # Track issues and improvements across all analyses
+    for analysis in [*prev_analyses, curr_analysis]:
+        for phrase in issue_phrases:
+            if phrase in analysis.lower():
+                consistent_issues.append(phrase)
+        for phrase in improvement_phrases:
+            if phrase in analysis.lower():
+                improvements.append(phrase)
+    
+    # Count frequencies to identify patterns
+    from collections import Counter
+    consistent_issues = [issue for issue, count in Counter(consistent_issues).items() if count >= 2]
+    recurring_improvements = [imp for imp, count in Counter(improvements).items() if count >= 2]
+    
+    synthesis = []
+    if consistent_issues:
+        synthesis.append(f"Persistent challenges: {', '.join(consistent_issues)}")
+    if recurring_improvements:
+        synthesis.append(f"Consistent improvements: {', '.join(recurring_improvements)}")
+    if prompt_evolution:
+        synthesis.append(f"Prompt evolution: {prompt_evolution}")
+    
+    return "; ".join(synthesis) if synthesis else "No clear patterns identified yet"
 
 def run_iterations(config, goal, run_directory):
     """Main iteration loop for generating and refining images."""
@@ -89,6 +193,8 @@ def run_iterations(config, goal, run_directory):
     iteration = 0
     max_iters = config["iterations"]["max_iterations"]
     previous_prompt = None
+    previous_analyses = []
+    iteration_history = []
 
     while iteration < max_iters:
         iteration += 1
@@ -105,11 +211,19 @@ def run_iterations(config, goal, run_directory):
         print(f"Analysis: {analysis}")
 
         # 3) Evaluate quality and decide whether to continue
-        should_continue, reason = evaluate_quality(analysis, current_prompt, previous_prompt, config, iteration)
+        should_continue, reason = evaluate_quality(
+            analysis, 
+            current_prompt, 
+            previous_prompt, 
+            config, 
+            iteration,
+            previous_analyses
+        )
         
         # 4) Log iteration data
         log_data = {
             "iteration": iteration,
+            "goal": goal,
             "prompt_before": current_prompt,
             "analysis": analysis,
             "image_path": image_path,
@@ -129,9 +243,19 @@ def run_iterations(config, goal, run_directory):
             print(f"\nStopping iterations: {reason}")
             break
 
+        # Store current analysis and iteration data for future comparison
+        previous_analyses.append(analysis)
+        iteration_history.append(log_data)
+
         # 5) Refine prompt for next iteration
         previous_prompt = current_prompt
-        current_prompt = refine_prompt(current_prompt, analysis, config)
+        current_prompt = refine_prompt(
+            current_prompt, 
+            analysis, 
+            config, 
+            iteration=iteration,
+            previous_iterations=iteration_history
+        )
         print(f"Refined prompt: {current_prompt}")
         log_data["prompt_after"] = current_prompt
 

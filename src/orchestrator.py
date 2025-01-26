@@ -5,31 +5,13 @@ import difflib
 
 from .generate_image import generate_image
 from .evaluation import analyze_image
-from .ollama_text_utils import refine_prompt, generate_text_ollama, generate_text_gemini
-
-def understand_goal(goal, config):
-    """
-    Use the configured text model to understand the goal and generate an initial prompt.
-    Returns the analysis and the initial prompt.
-    """
-    # Format the goal understanding prompt
-    prompt = config["prompts"]["goal_understanding"].format(goal=goal)
-    
-    # Use the configured provider
-    provider = config["text"]["provider"]
-    if provider == "ollama":
-        response = generate_text_ollama(prompt, config)
-    elif provider == "gemini":
-        response = generate_text_gemini(prompt, config)
-    else:
-        raise ValueError(f"Unsupported text provider: {provider}")
-    
-    # Extract the initial prompt (last line of the response)
-    lines = response.strip().split('\n')
-    analysis = '\n'.join(lines[:-1])
-    initial_prompt = lines[-1]
-    
-    return analysis, initial_prompt
+from .ollama_text_utils import (
+    understand_goal,
+    create_initial_prompt,
+    refine_prompt,
+    generate_text_ollama,
+    generate_text_gemini
+)
 
 def calculate_prompt_similarity(prompt1, prompt2):
     """Calculate how similar two prompts are using difflib."""
@@ -175,9 +157,13 @@ def synthesize_learning(prev_analyses, curr_analysis, prev_prompt, curr_prompt):
 def run_iterations(config, goal, run_directory):
     """Main iteration loop for generating and refining images."""
     print("\n=== Understanding Goal ===")
-    analysis, current_prompt = understand_goal(goal, config)
+    # 1. Initial goal analysis
+    analysis = understand_goal(goal, config)
     print("Goal Analysis:")
     print(analysis)
+
+    # 2. Create initial T5 prompt
+    current_prompt = create_initial_prompt(goal, analysis, config)
     print(f"\nInitial Prompt: {current_prompt}")
     
     # Save goal analysis
@@ -193,8 +179,6 @@ def run_iterations(config, goal, run_directory):
     iteration = 0
     max_iters = config["iterations"]["max_iterations"]
     previous_prompt = None
-    previous_analyses = []
-    iteration_history = []
 
     while iteration < max_iters:
         iteration += 1
@@ -204,34 +188,25 @@ def run_iterations(config, goal, run_directory):
         image_path = generate_image(current_prompt, config, iteration)
         print(f"Generated image: {image_path}")
 
-        # 2) Analyze image with vision model
-        # Format the analysis prompt with the goal
-        config["analysis_prompt"] = config["prompts"]["analysis"].format(goal=goal)
-        analysis = analyze_image(image_path, config)
-        print(f"Analysis: {analysis}")
+        # 2) Get unbiased description of the image
+        config['current_goal'] = goal  # Add goal to config for second stage
+        image_description = analyze_image(image_path, config, stage="describe")
+        print(f"Image Description: {image_description}")
 
-        # 3) Evaluate quality and decide whether to continue
-        should_continue, reason = evaluate_quality(
-            analysis, 
-            current_prompt, 
-            previous_prompt, 
-            config, 
-            iteration,
-            previous_analyses
-        )
-        
+        # 3) Compare image to goal
+        config['image_description'] = image_description  # Add description for comparison
+        alignment_analysis = analyze_image(image_path, config, stage="analyze")
+        print(f"Alignment Analysis: {alignment_analysis}")
+
         # 4) Log iteration data
         log_data = {
             "iteration": iteration,
             "goal": goal,
-            "prompt_before": current_prompt,
-            "analysis": analysis,
+            "prompt": current_prompt,
             "image_path": image_path,
-            "timestamp": datetime.now().isoformat(),
-            "quality_check": {
-                "should_continue": should_continue,
-                "reason": reason
-            }
+            "image_description": image_description,
+            "alignment_analysis": alignment_analysis,
+            "timestamp": datetime.now().isoformat()
         }
 
         # Save JSON log
@@ -239,25 +214,29 @@ def run_iterations(config, goal, run_directory):
         with open(iteration_log_path, "w", encoding="utf-8") as f:
             json.dump(log_data, f, indent=2)
 
-        if not should_continue:
-            print(f"\nStopping iterations: {reason}")
+        # 5) Check if we've achieved the goal
+        success_indicators = [
+            "perfectly matches",
+            "all elements align",
+            "complete match",
+            "fully achieves the goal"
+        ]
+        
+        if any(indicator in alignment_analysis.lower() for indicator in success_indicators):
+            print("\nGoal achieved successfully!")
             break
 
-        # Store current analysis and iteration data for future comparison
-        previous_analyses.append(analysis)
-        iteration_history.append(log_data)
-
-        # 5) Refine prompt for next iteration
+        # 6) Create refined prompt for next iteration
         previous_prompt = current_prompt
         current_prompt = refine_prompt(
-            current_prompt, 
-            analysis, 
-            config, 
-            iteration=iteration,
-            previous_iterations=iteration_history
+            current_prompt,
+            goal,
+            image_description,
+            alignment_analysis,
+            config
         )
         print(f"Refined prompt: {current_prompt}")
-        log_data["prompt_after"] = current_prompt
+        log_data["next_prompt"] = current_prompt
 
         # Update the log with the new prompt
         with open(iteration_log_path, "w", encoding="utf-8") as f:

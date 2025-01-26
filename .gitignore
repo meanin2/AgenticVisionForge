@@ -187,6 +187,7 @@ ENV/
 runs/
 comfyui_outputs/
 logs/
+config.yaml  # Ignore the actual config file with API keys
 
 # Misc
 .DS_Store

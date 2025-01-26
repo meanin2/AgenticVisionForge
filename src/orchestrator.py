@@ -35,12 +35,16 @@ def calculate_prompt_similarity(prompt1, prompt2):
     """Calculate how similar two prompts are using difflib."""
     return difflib.SequenceMatcher(None, prompt1, prompt2).ratio()
 
-def evaluate_quality(analysis, current_prompt, previous_prompt, config):
+def evaluate_quality(analysis, current_prompt, previous_prompt, config, iteration):
     """
     Evaluate the quality of the current iteration and decide whether to continue.
     Returns (should_continue, reason)
     """
-    # 1. Check for explicit success phrases
+    # Always continue for the first 3 iterations
+    if iteration < 3:
+        return True, "Continuing for minimum iterations"
+
+    # Check for explicit success phrases
     success_phrases = [
         "perfectly matches",
         "excellent match",
@@ -51,13 +55,7 @@ def evaluate_quality(analysis, current_prompt, previous_prompt, config):
     if any(phrase in analysis.lower() for phrase in success_phrases):
         return False, "Analysis indicates perfect match"
 
-    # 2. Check prompt convergence
-    if previous_prompt:
-        similarity = calculate_prompt_similarity(current_prompt, previous_prompt)
-        if similarity > 0.95:  # 95% similar
-            return False, "Prompts have converged (minimal changes)"
-
-    # 3. Check if we're still making substantial improvements
+    # Check if we're still making substantial improvements
     improvement_phrases = [
         "could be improved",
         "needs adjustment",
@@ -107,7 +105,7 @@ def run_iterations(config, goal, run_directory):
         print(f"Analysis: {analysis}")
 
         # 3) Evaluate quality and decide whether to continue
-        should_continue, reason = evaluate_quality(analysis, current_prompt, previous_prompt, config)
+        should_continue, reason = evaluate_quality(analysis, current_prompt, previous_prompt, config, iteration)
         
         # 4) Log iteration data
         log_data = {

@@ -16,7 +16,7 @@ vision:
     api_url: "http://localhost:11434/api/generate"
   gemini:
     model: "gemini-2.0-flash-exp"
-    api_key: "AIzaSyArWxQsHC4GHZaIo4jPbWrrQ6QerDBP2UU"
+    api_key: "YOUR_GEMINI_API_KEY_HERE"  # Replace with your API key
 
 # Text model configuration
 text:
@@ -27,7 +27,7 @@ text:
     strip_think_tags: true
   gemini:
     model: "gemini-2.0-flash-exp"
-    api_key: "AIzaSyArWxQsHC4GHZaIo4jPbWrrQ6QerDBP2UU"
+    api_key: "YOUR_GEMINI_API_KEY_HERE"  # Replace with your API key
 
 # Prompting configuration
 prompts:
@@ -81,8 +81,4 @@ prompts:
     Remember to maintain positive descriptions only.
 
 logs:
-  directory: "logs"
-
-analysis_prompt: |
-  Please analyze the provided image for how well it matches the user's goal. 
-  Mention any key objects, style, and composition aspects. Then provide suggestions for refining the prompt. 
+  directory: "logs" 

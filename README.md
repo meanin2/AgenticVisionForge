@@ -1,22 +1,43 @@
-# Iterative Image Refinement with ComfyUI + Ollama
+# AgenticVisionForge: Iterative AI Image Refinement
 
-This tool generates and refines images iteratively based on your input goal. It combines ComfyUI for image creation and Ollama for analysis and prompt refinement, creating a feedback loop to improve the final output.
-
-## Key Features
-- **ComfyUI Integration**: Generates images using your local ComfyUI setup.
-- **Ollama Vision Model**: Evaluates images to check alignment with the goal.
-- **Ollama Text Model**: Suggests refined prompts for better results.
-- **Automatic Looping**: Iterates until the desired quality or max steps are achieved.
+**AgenticVisionForge** is a tool for refining AI-generated images through an iterative feedback loop. By combining **ComfyUI** for image generation with flexible AI models from **Ollama** (local inference) and **Gemini** (cloud-based API), the tool enables dynamic and customizable workflows for creating high-quality outputs.
 
 ---
 
-## Getting Started
+## Key Features
+- **ComfyUI Integration**: Generate images using a customizable ComfyUI workflow.
+- **Vision Model Flexibility**: Use any vision model from Ollama or Gemini for image evaluation.
+- **Text Model Flexibility**: Employ thinking models (e.g., DeepSeek R1) or standard text models for prompt refinement.
+- **Mix-and-Match Models**: Combine Ollama and Gemini in any configuration for vision and text tasks.
+- **Automated Feedback Loop**: Generate → Evaluate → Refine → Repeat until the desired quality is reached.
+- **Advanced Handling of `<think>` Tags**: Automatically removes `<think>` tags from outputs of thinking models before sending prompts to ComfyUI.
 
-### Installation
-1. **Clone this repository**:
+---
+
+## Prerequisites
+1. **ComfyUI**:
+   - Install and run locally. See the [ComfyUI GitHub](https://github.com/comfyanonymous/ComfyUI) for details.
+2. **Ollama** (optional):
+   - Download and install from [Ollama](https://www.ollama.ai/). Start the server with:
+     ```bash
+     ollama serve
+     ```
+   - Download models such as `llama3.2-vision` or `DeepSeek R1`:
+     ```bash
+     ollama pull llama3.2-vision
+     ollama pull deepseek-r1
+     ```
+3. **Gemini** (optional):
+   - Obtain an API key from [AI Studio](https://aistudio.google.com/apikey).
+
+---
+
+## Installation
+
+1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourname/iterative-comfy-ollama.git
-   cd iterative-comfy-ollama
+   git clone https://github.com/yourname/agentic-vision-forge.git
+   cd agentic-vision-forge
    ```
 
 2. **Set up a Python environment**:
@@ -37,73 +58,113 @@ This tool generates and refines images iteratively based on your input goal. It 
    python main.py --port 8188
    ```
 
-5. **Ensure Ollama is running**:
-   ```bash
-   ollama serve
-   ollama pull llama3.2-vision
-   ollama pull llama3
-   ```
+5. **Configure models**:
+   - Ollama (if using): Ensure `ollama serve` is running and the required models are downloaded.
+   - Gemini (if using): Set your API key in the configuration file.
 
 ---
 
-### How It Works
+## Configuration
 
-1. **Input your goal**: Provide a description of what you want (e.g., "A futuristic cityscape with flying cars").
-2. **Generate images**: The tool uses a preconfigured ComfyUI workflow to generate an image.
-3. **Evaluate and refine**: Images are analyzed by Ollama's vision model, and a refined prompt is generated.
-4. **Repeat**: The process continues until the output meets your criteria or reaches the iteration limit.
+### Workflow Setup
+1. Open ComfyUI and design your workflow.
+2. Export the workflow in **API format**.
+3. Replace the contents of `comfyui_prompt_template.json` with your exported workflow.
+   - Ensure your workflow includes placeholders like `"PROMPT_PLACEHOLDER"` for the input prompt.
+
+### Configuration File
+1. Copy `config.example.yaml` to `config.yaml`.
+2. Customize the following options:
+   - **ComfyUI Settings**:
+     ```yaml
+     comfyui:
+       api_url: "http://localhost:8188"
+       output_dir: "comfyui_outputs"
+     ```
+   - **Vision Models**:
+     ```yaml
+     vision:
+       provider: "ollama"  # or "gemini"
+       ollama:
+         model: "llama3.2-vision"
+         api_url: "http://localhost:11434/api/generate"
+       gemini:
+         model: "gemini-2.0-flash-exp"
+         api_key: "YOUR_GEMINI_API_KEY"
+     ```
+   - **Text Models**:
+     ```yaml
+     text:
+       provider: "ollama"  # or "gemini"
+       ollama:
+         model: "deepseek-r1"
+         strip_think_tags: true
+       gemini:
+         model: "gemini-2.0-flash-exp"
+     ```
+   - **Iteration Settings**:
+     ```yaml
+     iterations:
+       max_iterations: 10
+       success_threshold: 90
+     ```
 
 ---
 
-### Usage
+## Usage
 
-**Run the tool**:
+Run the tool with your desired goal:
 ```bash
-python main.py --goal "Your description here"
+python main.py --goal "A futuristic cityscape with flying cars"
 ```
 
-**Options**:
-- `--max_iterations`: Override the maximum iterations set in `config.yaml`.
-- `--output_dir`: Set a custom directory for generated images and logs.
-- `--run_name`: Specify a custom name for this run.
+### Optional Arguments
+- `--max_iterations`: Override the maximum iterations in `config.yaml`.
+- `--run_name`: Specify a custom name for the run.
+- `--output_dir`: Set a custom directory for output images and logs.
 
 ---
 
-### Configuring Your Workflow
+## Process Overview
 
-- The workflow is defined in `comfyui_prompt_template.json`.
-- You can paste your own ComfyUI workflow into this file.  
-  - **Ensure it is in API format** by exporting it from ComfyUI:
-    1. Open ComfyUI.
-    2. Load your workflow.
-    3. Export it via **API**.
-  - Replace `"PROMPT_PLACEHOLDER"` with your prompt dynamically during iterations.
+1. **Input the Goal**: Provide a description of your desired image.
+2. **Generate an Image**: ComfyUI uses the configured workflow to generate an image.
+3. **Evaluate the Image**: A vision model analyzes the image and provides feedback.
+4. **Refine the Prompt**: A text model refines the prompt based on feedback.
+5. **Repeat**: The process continues until the success threshold or iteration limit is reached.
 
 ---
 
-### Files & Directories
+## Supported Models
 
-- `comfyui_prompt_template.json`: Base workflow for image generation.
-- `config.example.yaml`: Configuration template to set models, max iterations, and other options.
-- `src/`: Core modules for image generation, evaluation, and orchestration.
-- `runs/`: Directory where outputs and logs are saved for each run.
+### Vision Models
+- Ollama: Any vision model, such as `llama3.2-vision`.
+- Gemini: Models like `gemini-2.0-flash-exp`.
+
+### Text Models
+- Ollama: Use models like `DeepSeek R1` with `<think>` tag support.
+- Gemini: Standard text models for prompt refinement.
 
 ---
 
-### Troubleshooting
+## Troubleshooting
 
-1. **Invalid workflow error**:
-   - Ensure `comfyui_prompt_template.json` matches the API format required by ComfyUI.
+1. **Invalid Workflow**:
+   - Ensure the workflow in `comfyui_prompt_template.json` is exported in **API format**.
+2. **Connection Issues**:
+   - Verify that ComfyUI and Ollama servers are running if configured.
+   - Ensure the Gemini API key is set in `config.yaml`.
+3. **No Output**:
+   - Check if the output directory in `config.yaml` has the correct permissions.
 
-2. **Ollama connection issues**:
-   - Verify `ollama serve` is running and models are downloaded.
+---
 
-3. **No output image**:
-   - Check `config["comfyui"]["output_dir"]` and ensure it matches your permissions.
+## References
+- [ComfyUI GitHub](https://github.com/comfyanonymous/ComfyUI)
+- [Ollama](https://www.ollama.ai/)
+- [Gemini API Key](https://aistudio.google.com/apikey)
 
 ---
 
 ## License
 [MIT](LICENSE)
-
-Happy refining!

@@ -16,7 +16,7 @@ vision:
     api_url: "http://localhost:11434/api/generate"
   gemini:
     model: "gemini-2.0-flash-exp"
-    api_key: "AIzaSyAcFgInBOudkmJQ2W9snvTiDT3-KdPEnpo"
+    api_key: "${GEMINI_API_KEY}"  # Using environment variable
 
 # Text model configuration
 text:
@@ -27,7 +27,7 @@ text:
     strip_think_tags: true
   gemini:
     model: "gemini-2.0-flash-exp"
-    api_key: "AIzaSyAcFgInBOudkmJQ2W9snvTiDT3-KdPEnpo"
+    api_key: "${GEMINI_API_KEY}"  # Using environment variable
 
 # Prompting configuration
 prompts:

@@ -3,6 +3,7 @@ import os
 import yaml
 from datetime import datetime
 from src.orchestrator import run_iterations
+from src.utils import load_env_vars, replace_env_vars
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Iterative Image Generation with ComfyUI + Ollama")
@@ -17,8 +18,15 @@ def parse_arguments():
     return parser.parse_args()
 
 def load_config():
+    # First load environment variables
+    load_env_vars()
+    
+    # Then load and process config
     with open("config.yaml", "r") as f:
-        return yaml.safe_load(f)
+        config = yaml.safe_load(f)
+    
+    # Replace environment variables in config
+    return replace_env_vars(config)
 
 def setup_directories(config, run_name):
     runs_dir = config.get("runs_directory", "runs")

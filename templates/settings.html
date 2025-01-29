@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - AgenticVisionForge{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <!-- Header -->
+    <div class="mb-6">
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+            Application Settings
+        </h2>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Configure your application preferences and defaults
+        </p>
+    </div>
+
+    <div class="grid gap-6 mb-8 md:grid-cols-2">
+        <!-- General Settings -->
+        <div class="min-w-0 p-4 bg-white rounded-lg shadow-xs dark:bg-gray-800">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                General Settings
+            </h3>
+
+            <form class="space-y-6">
+                <!-- Default Output Directory -->
+                <div>
+                    <label class="block text-sm">
+                        <span class="text-gray-700 dark:text-gray-400">Default Output Directory</span>
+                        <input
+                            type="text"
+                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700 focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
+                            value="{{ config.default_output_dir }}"
+                            placeholder="outputs/"
+                        />
+                    </label>
+                </div>
+
+                <!-- Default Max Iterations -->
+                <div>
+                    <label class="block text-sm">
+                        <span class="text-gray-700 dark:text-gray-400">Default Max Iterations</span>
+                        <input
+                            type="number"
+                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700 focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
+                            value="{{ config.default_max_iterations }}"
+                            min="1"
+                            max="10"
+                        />
+                    </label>
+                </div>
+
+                <!-- Theme -->
+                <div>
+                    <label class="block text-sm">
+                        <span class="text-gray-700 dark:text-gray-400">Theme</span>
+                        <select class="block w-full mt-1 text-sm dark:text-gray-300 dark:border-gray-600 dark:bg-gray-700 form-select focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:focus:shadow-outline-gray">
+                            <option value="system" {% if config.theme == "system" %}selected{% endif %}>System</option>
+                            <option value="light" {% if config.theme == "light" %}selected{% endif %}>Light</option>
+                            <option value="dark" {% if config.theme == "dark" %}selected{% endif %}>Dark</option>
+                        </select>
+                    </label>
+                </div>
+
+                <!-- Save Button -->
+                <div>
+                    <button
+                        type="submit"
+                        class="w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring btn-animate"
+                    >
+                        Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Advanced Settings -->
+        <div class="min-w-0 p-4 bg-white rounded-lg shadow-xs dark:bg-gray-800">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                Advanced Settings
+            </h3>
+
+            <form class="space-y-6">
+                <!-- ComfyUI Server URL -->
+                <div>
+                    <label class="block text-sm">
+                        <span class="text-gray-700 dark:text-gray-400">ComfyUI Server URL</span>
+                        <input
+                            type="url"
+                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700 focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
+                            value="{{ config.comfyui_url }}"
+                            placeholder="http://localhost:8188"
+                        />
+                    </label>
+                </div>
+
+                <!-- Ollama Server URL -->
+                <div>
+                    <label class="block text-sm">
+                        <span class="text-gray-700 dark:text-gray-400">Ollama Server URL</span>
+                        <input
+                            type="url"
+                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700 focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
+                            value="{{ config.ollama_url }}"
+                            placeholder="http://localhost:11434"
+                        />
+                    </label>
+                </div>
+
+                <!-- Debug Mode -->
+                <div class="flex items-center">
+                    <label class="flex items-center dark:text-gray-400">
+                        <input
+                            type="checkbox"
+                            class="text-blue-600 form-checkbox focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:focus:shadow-outline-gray"
+                            {% if config.debug_mode %}checked{% endif %}
+                        />
+                        <span class="ml-2">
+                            Enable Debug Mode
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Save Button -->
+                <div>
+                    <button
+                        type="submit"
+                        class="w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring btn-animate"
+                    >
+                        Save Advanced Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-medium text-red-600 dark:text-red-400 mb-4">
+            Danger Zone
+        </h3>
+
+        <div class="space-y-4">
+            <!-- Reset Settings -->
+            <div class="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <div>
+                    <h4 class="text-sm font-medium text-red-800 dark:text-red-200">Reset All Settings</h4>
+                    <p class="text-xs text-red-600 dark:text-red-400">This will reset all settings to their default values</p>
+                </div>
+                <button
+                    onclick="confirmReset()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                >
+                    Reset Settings
+                </button>
+            </div>
+
+            <!-- Clear Cache -->
+            <div class="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <div>
+                    <h4 class="text-sm font-medium text-red-800 dark:text-red-200">Clear Application Cache</h4>
+                    <p class="text-xs text-red-600 dark:text-red-400">This will remove all cached data and temporary files</p>
+                </div>
+                <button
+                    onclick="confirmClearCache()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                >
+                    Clear Cache
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Form submission for general settings
+document.querySelector('form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    await saveSettings(this, '/settings/general');
+});
+
+// Form submission for advanced settings
+document.querySelectorAll('form')[1].addEventListener('submit', async function(e) {
+    e.preventDefault();
+    await saveSettings(this, '/settings/advanced');
+});
+
+async function saveSettings(form, endpoint) {
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    
+    // Disable submit button and show loading state
+    submitButton.disabled = true;
+    submitButton.innerHTML = `
+        <div class="spinner inline-block mr-2"></div>
+        Saving...
+    `;
+    
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to save settings');
+        }
+        
+        const data = await response.json();
+        showToast('Settings saved successfully!', 'success');
+        
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    } finally {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.textContent = submitButton.textContent.includes('Advanced') ? 'Save Advanced Settings' : 'Save Settings';
+    }
+}
+
+function confirmReset() {
+    if (confirm('Are you sure you want to reset all settings to their default values? This action cannot be undone.')) {
+        resetSettings();
+    }
+}
+
+async function resetSettings() {
+    try {
+        const response = await fetch('/settings/reset', {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to reset settings');
+        }
+        
+        showToast('Settings have been reset to defaults', 'success');
+        setTimeout(() => window.location.reload(), 1500);
+        
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+function confirmClearCache() {
+    if (confirm('Are you sure you want to clear all cached data? This action cannot be undone.')) {
+        clearCache();
+    }
+}
+
+async function clearCache() {
+    try {
+        const response = await fetch('/settings/clear-cache', {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to clear cache');
+        }
+        
+        showToast('Cache cleared successfully', 'success');
+        
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+</script>
+{% endblock %} 

@@ -1,49 +1,378 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>AgenticVisionForge - Results</title>
-  <!-- Tailwind CSS CDN -->
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.2.7/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 min-h-screen p-4">
-  <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
-    <h1 class="text-2xl font-bold mb-4">Results for Run: {{ run_name }}</h1>
+{% extends "base.html" %}
 
-    <!-- Generated Images -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {% for image in images %}
-      <div class="border p-2 rounded">
-        <img 
-          src="{{ url_for('serve_generated_image', run_name=run_name, filename=image) }}" 
-          alt="{{ image }}" 
-          class="w-full rounded shadow">
-        <p class="text-center mt-2 text-sm text-gray-600">{{ image }}</p>
-      </div>
-      {% endfor %}
+{% block title %}Run Results - AgenticVisionForge{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                    Run Results: {{ run_name }}
+                </h2>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    View and manage your generation results
+                </p>
+            </div>
+            <div class="flex space-x-2">
+                <button id="editGoalBtn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300">
+                    Edit Goal
+                </button>
+                <button id="cancelRunBtn" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300">
+                    Cancel Run
+                </button>
+            </div>
+        </div>
     </div>
 
-    <!-- Logs -->
+    <div class="grid gap-6 lg:grid-cols-3">
+        <!-- Run Information -->
+        <div class="lg:col-span-1">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-6">
+                <!-- Goal -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        Generation Goal
+                    </h3>
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                        <p id="goalText" class="text-sm text-gray-700 dark:text-gray-300">
+                            {{ goal }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Analysis -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        Goal Analysis
+                    </h3>
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                        <p class="text-sm text-gray-700 dark:text-gray-300">
+                            {{ analysis }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Run Status -->
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        Run Status
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Progress</span>
+                            <span id="progressText" class="text-sm font-medium text-gray-900 dark:text-gray-100">75%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                            <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 75%"></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Status</span>
+                            <span id="statusBadge" class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-300">
+                                Running
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Iterations</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ images|length }}/{{ max_iterations }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generated Images -->
+        <div class="lg:col-span-2">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Generated Images
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for image in images %}
+                    <div class="relative group">
+                        <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
+                            <img
+                                src="{{ url_for('serve_generated_image', run_name=run_name, filename=image) }}"
+                                alt="Generated image"
+                                class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity duration-300"
+                            />
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity duration-300"></div>
+                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <button onclick="viewImage('{{ url_for('serve_generated_image', run_name=run_name, filename=image) }}')" class="mx-1 p-2 text-white hover:text-blue-500">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                                <button onclick="downloadImage('{{ url_for('serve_generated_image', run_name=run_name, filename=image) }}', '{{ image }}')" class="mx-1 p-2 text-white hover:text-green-500">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">Iteration {{ loop.index }}</p>
+                            <button onclick="viewPrompt('{{ loop.index }}')" class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                View Prompt
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Empty State -->
+                {% if not images %}
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No images generated yet</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Generation is in progress...</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Iteration Logs -->
     <div class="mt-6">
-      <h2 class="text-xl font-semibold mb-2">Iteration Logs</h2>
-      <ul class="list-disc list-inside">
-        {% for log in logs %}
-        <li>
-          <a 
-            href="{{ url_for('serve_run_file', run_name=run_name, filename=log) }}" 
-            target="_blank" 
-            class="text-blue-600 hover:underline">
-            {{ log }}
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                Iteration Logs
+            </h3>
 
-    <!-- Back to Home -->
-    <div class="mt-6">
-      <a href="{{ url_for('index') }}" class="text-blue-600 hover:underline">Back to Home</a>
+            <div class="space-y-4">
+                {% for log in logs %}
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            Iteration {{ loop.index }}
+                        </h4>
+                        <button onclick="viewLog('{{ log }}')" class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                            View Details
+                        </button>
+                    </div>
+                    <pre class="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 rounded p-2 overflow-x-auto">
+                        <code>{{ log }}</code>
+                    </pre>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
-  </div>
-</body>
-</html> 
+</div>
+
+<!-- Edit Goal Modal -->
+<div id="editGoalModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full">
+            <div class="p-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Edit Generation Goal
+                </h3>
+                <textarea
+                    id="editGoalInput"
+                    rows="4"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                ></textarea>
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button onclick="closeEditGoalModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-300">
+                        Cancel
+                    </button>
+                    <button onclick="saveGoal()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Prompt Modal -->
+<div id="viewPromptModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full">
+            <div class="p-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                    Iteration Prompt
+                </h3>
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                    <pre class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap"></pre>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button onclick="closeViewPromptModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-300">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// WebSocket connection for real-time updates
+let ws = null;
+
+function connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${protocol}//${window.location.host}/ws/run/{{ run_name }}`);
+    
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        updateRunStatus(data);
+    };
+    
+    ws.onerror = function(error) {
+        showToast('WebSocket error: ' + error.message, 'error');
+    };
+    
+    ws.onclose = function() {
+        // Try to reconnect after 5 seconds
+        setTimeout(connectWebSocket, 5000);
+    };
+}
+
+function updateRunStatus(data) {
+    // Update progress
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    progressBar.style.width = `${data.progress}%`;
+    progressText.textContent = `${data.progress}%`;
+    
+    // Update status badge
+    const statusBadge = document.getElementById('statusBadge');
+    statusBadge.textContent = data.status;
+    
+    // Update status badge color
+    if (data.status === 'Running') {
+        statusBadge.className = 'px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-300';
+    } else if (data.status === 'Completed') {
+        statusBadge.className = 'px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300';
+    } else if (data.status === 'Failed') {
+        statusBadge.className = 'px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full dark:bg-red-900 dark:text-red-300';
+    }
+    
+    // Refresh page if completed
+    if (data.status === 'Completed') {
+        setTimeout(() => window.location.reload(), 1000);
+    }
+}
+
+// Edit goal functionality
+document.getElementById('editGoalBtn').addEventListener('click', function() {
+    const modal = document.getElementById('editGoalModal');
+    const input = document.getElementById('editGoalInput');
+    const currentGoal = document.getElementById('goalText').textContent.trim();
+    
+    input.value = currentGoal;
+    modal.classList.remove('hidden');
+});
+
+function closeEditGoalModal() {
+    document.getElementById('editGoalModal').classList.add('hidden');
+}
+
+async function saveGoal() {
+    const newGoal = document.getElementById('editGoalInput').value;
+    
+    try {
+        const response = await fetch(`/runs/${encodeURIComponent('{{ run_name }}')}/goal`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ goal: newGoal })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to update goal');
+        }
+        
+        document.getElementById('goalText').textContent = newGoal;
+        closeEditGoalModal();
+        showToast('Goal updated successfully', 'success');
+        
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    }
+}
+
+// View prompt functionality
+function viewPrompt(iteration) {
+    const modal = document.getElementById('viewPromptModal');
+    const pre = modal.querySelector('pre');
+    
+    fetch(`/runs/${encodeURIComponent('{{ run_name }}')}/iterations/${iteration}/prompt`)
+        .then(response => response.json())
+        .then(data => {
+            pre.textContent = data.prompt;
+            modal.classList.remove('hidden');
+        })
+        .catch(error => {
+            showToast('Error: ' + error.message, 'error');
+        });
+}
+
+function closeViewPromptModal() {
+    document.getElementById('viewPromptModal').classList.add('hidden');
+}
+
+// Cancel run functionality
+document.getElementById('cancelRunBtn').addEventListener('click', async function() {
+    if (confirm('Are you sure you want to cancel this run? This action cannot be undone.')) {
+        try {
+            const response = await fetch(`/runs/${encodeURIComponent('{{ run_name }}')}/cancel`, {
+                method: 'POST'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to cancel run');
+            }
+            
+            showToast('Run cancelled successfully', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+            
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+        }
+    }
+});
+
+// Image handling
+function viewImage(url) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="relative max-w-4xl mx-auto">
+            <img src="${url}" class="max-h-[90vh] max-w-[90vw] object-contain" />
+            <button class="absolute top-4 right-4 text-white text-2xl">&times;</button>
+        </div>
+    `;
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.tagName === 'BUTTON') {
+            modal.remove();
+        }
+    });
+    
+    document.body.appendChild(modal);
+}
+
+function downloadImage(url, filename) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+// Initialize WebSocket connection
+connectWebSocket();
+</script>
+{% endblock %} 

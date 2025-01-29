@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Models - AgenticVisionForge{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+    <!-- Header -->
+    <div class="mb-6">
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+            Model Management
+        </h2>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Configure and manage your Ollama and Gemini models
+        </p>
+    </div>
+
+    <div class="grid gap-6 mb-8 md:grid-cols-2">
+        <!-- Ollama Models -->
+        <div class="min-w-0 p-4 bg-white rounded-lg shadow-xs dark:bg-gray-800">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                    Ollama Models
+                </h3>
+                <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                    <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Pull Model
+                </button>
+            </div>
+
+            <!-- Vision Models -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Vision Models</h4>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">llama3.2-vision</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Vision analysis model</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-300">
+                                Active
+                            </span>
+                            <button class="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Text Models -->
+            <div>
+                <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Text Models</h4>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">deepseek-r1</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Prompt refinement model</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-300">
+                                Active
+                            </span>
+                            <button class="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gemini Configuration -->
+        <div class="min-w-0 p-4 bg-white rounded-lg shadow-xs dark:bg-gray-800">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                Gemini Configuration
+            </h3>
+
+            <form class="space-y-6">
+                <!-- API Key -->
+                <div>
+                    <label class="block text-sm">
+                        <span class="text-gray-700 dark:text-gray-400">API Key</span>
+                        <div class="relative">
+                            <input
+                                type="password"
+                                class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700 focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
+                                value="{{ config.vision.gemini.api_key }}"
+                            />
+                            <button
+                                type="button"
+                                class="absolute inset-y-0 right-0 px-3 flex items-center text-sm leading-5"
+                                onclick="togglePasswordVisibility(this)"
+                            >
+                                <svg class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Vision Model -->
+                <div>
+                    <label class="block text-sm">
+                        <span class="text-gray-700 dark:text-gray-400">Vision Model</span>
+                        <select class="block w-full mt-1 text-sm dark:text-gray-300 dark:border-gray-600 dark:bg-gray-700 form-select focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:focus:shadow-outline-gray">
+                            <option value="gemini-2.0-flash-exp" {% if config.vision.gemini.model == "gemini-2.0-flash-exp" %}selected{% endif %}>
+                                gemini-2.0-flash-exp
+                            </option>
+                        </select>
+                    </label>
+                </div>
+
+                <!-- Text Model -->
+                <div>
+                    <label class="block text-sm">
+                        <span class="text-gray-700 dark:text-gray-400">Text Model</span>
+                        <select class="block w-full mt-1 text-sm dark:text-gray-300 dark:border-gray-600 dark:bg-gray-700 form-select focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:focus:shadow-outline-gray">
+                            <option value="gemini-2.0-flash-exp" {% if config.text.gemini.model == "gemini-2.0-flash-exp" %}selected{% endif %}>
+                                gemini-2.0-flash-exp
+                            </option>
+                        </select>
+                    </label>
+                </div>
+
+                <!-- Save Button -->
+                <div>
+                    <button
+                        type="submit"
+                        class="w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring btn-animate"
+                    >
+                        Save Configuration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Model Status -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            Model Status
+        </h3>
+
+        <div class="grid gap-4 md:grid-cols-2">
+            <!-- Ollama Server -->
+            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">Ollama Server</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">http://localhost:11434</p>
+                    </div>
+                    <span class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-300">
+                        Connected
+                    </span>
+                </div>
+            </div>
+
+            <!-- Gemini API -->
+            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">Gemini API</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">API Key: {{ "•" * 20 }}</p>
+                    </div>
+                    <span class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-300">
+                        Authenticated
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function togglePasswordVisibility(button) {
+    const input = button.parentElement.querySelector('input');
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+    
+    // Toggle eye icon
+    const svg = button.querySelector('svg');
+    if (type === 'text') {
+        svg.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+        `;
+    } else {
+        svg.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        `;
+    }
+}
+
+// Form submission
+document.querySelector('form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitButton = this.querySelector('button[type="submit"]');
+    
+    // Disable submit button and show loading state
+    submitButton.disabled = true;
+    submitButton.innerHTML = `
+        <div class="spinner inline-block mr-2"></div>
+        Saving...
+    `;
+    
+    try {
+        const response = await fetch('/models', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to save configuration');
+        }
+        
+        const data = await response.json();
+        showToast('Configuration saved successfully!', 'success');
+        
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    } finally {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.textContent = 'Save Configuration';
+    }
+});
+</script>
+{% endblock %} 

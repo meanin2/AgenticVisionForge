@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AgenticVisionForge - Results</title>
+  <!-- Tailwind CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.2.7/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+  <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
+    <h1 class="text-2xl font-bold mb-4">Results for Run: {{ run_name }}</h1>
+
+    <!-- Generated Images -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for image in images %}
+      <div class="border p-2 rounded">
+        <img 
+          src="{{ url_for('serve_generated_image', run_name=run_name, filename=image) }}" 
+          alt="{{ image }}" 
+          class="w-full rounded shadow">
+        <p class="text-center mt-2 text-sm text-gray-600">{{ image }}</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Logs -->
+    <div class="mt-6">
+      <h2 class="text-xl font-semibold mb-2">Iteration Logs</h2>
+      <ul class="list-disc list-inside">
+        {% for log in logs %}
+        <li>
+          <a 
+            href="{{ url_for('serve_run_file', run_name=run_name, filename=log) }}" 
+            target="_blank" 
+            class="text-blue-600 hover:underline">
+            {{ log }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Back to Home -->
+    <div class="mt-6">
+      <a href="{{ url_for('index') }}" class="text-blue-600 hover:underline">Back to Home</a>
+    </div>
+  </div>
+</body>
+</html> 

@@ -24,10 +24,9 @@ def setup_directories(config, run_name):
     runs_dir = config.get("runs_directory", "runs")
     run_path = os.path.join(runs_dir, run_name)
 
+    # Create only the run directory and generations subdirectory
     os.makedirs(run_path, exist_ok=True)
-    os.makedirs(os.path.join(run_path, "logs"), exist_ok=True)
     os.makedirs(os.path.join(run_path, "generations"), exist_ok=True)
-    os.makedirs(os.path.join(run_path, "analyses"), exist_ok=True)
 
     return run_path
 

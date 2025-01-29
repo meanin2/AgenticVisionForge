@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AgenticVisionForge</title>
+  <!-- Tailwind CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.2.7/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col justify-center items-center p-4">
+  <div class="max-w-md w-full bg-white rounded-lg shadow-md p-6">
+    <h1 class="text-2xl font-bold mb-4 text-center">AgenticVisionForge</h1>
+    <form action="/generate" method="POST" class="space-y-4">
+      <!-- Goal -->
+      <div>
+        <label for="goal" class="block text-sm font-medium text-gray-700">Goal (required)</label>
+        <textarea id="goal" name="goal" rows="3" required
+          class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="A futuristic cityscape with flying cars..."></textarea>
+      </div>
+
+      <!-- Max Iterations -->
+      <div>
+        <label for="max_iterations" class="block text-sm font-medium text-gray-700">Max Iterations (optional)</label>
+        <input type="number" id="max_iterations" name="max_iterations"
+          class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Default from config.yaml" />
+      </div>
+
+      <!-- Run Name -->
+      <div>
+        <label for="run_name" class="block text-sm font-medium text-gray-700">Run Name (optional)</label>
+        <input type="text" id="run_name" name="run_name"
+          class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Defaults to a timestamp" />
+      </div>
+
+      <!-- Output Directory -->
+      <div>
+        <label for="output_dir" class="block text-sm font-medium text-gray-700">Output Directory (optional)</label>
+        <input type="text" id="output_dir" name="output_dir"
+          class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Override comfyui.output_dir" />
+      </div>
+
+      <!-- Submit -->
+      <div class="text-center">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+          Generate
+        </button>
+      </div>
+    </form>
+  </div>
+</body>
+</html> 

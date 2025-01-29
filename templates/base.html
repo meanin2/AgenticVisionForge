@@ -1,238 +1,334 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}AgenticVisionForge{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs" defer></script>
-    <style>
-        [x-cloak] { display: none !important; }
-        
-        .spinner {
-            width: 1rem;
-            height: 1rem;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .btn-animate {
-            transition: transform 0.1s ease-in-out;
-        }
-        
-        .btn-animate:active {
-            transform: scale(0.95);
-        }
-        
-        .toast {
-            animation: slideIn 0.5s ease-out forwards;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}AgenticVisionForge{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs" defer></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .spinner {
+      width: 1rem; height: 1rem;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .btn-animate {
+      transition: transform 0.1s ease-in-out;
+    }
+    .btn-animate:active {
+      transform: scale(0.95);
+    }
+    .toast {
+      animation: slideIn 0.5s ease-out forwards;
+    }
+    @keyframes slideIn {
+      from {
+          transform: translateY(-100%);
+          opacity: 0;
+      }
+      to {
+          transform: translateY(0);
+          opacity: 1;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true', sidebarOpen: false }">
-    <!-- Toast Notifications -->
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-4"></div>
+<body class="bg-gray-100 dark:bg-gray-900" x-data="{ darkMode: false, sidebarOpen: false }"
+      x-init="
+        darkMode = localStorage.getItem('darkMode') === 'true'
+        if(darkMode) document.documentElement.classList.add('dark')
+      "
+>
+  <!-- Toast Notifications -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-4"></div>
 
-    <div class="min-h-screen flex">
-        <!-- Sidebar -->
-        <div x-cloak :class="sidebarOpen ? 'block' : 'hidden'" class="fixed inset-0 z-20 transition-opacity bg-black opacity-50 lg:hidden" @click="sidebarOpen = false"></div>
-
-        <div x-cloak :class="sidebarOpen ? 'translate-x-0 ease-out' : '-translate-x-full ease-in'" class="fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto transition duration-300 transform bg-white dark:bg-gray-800 lg:translate-x-0 lg:static lg:inset-0">
-            <!-- Logo -->
-            <div class="flex items-center justify-between p-4">
-                <div class="flex items-center">
-                    <span class="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                        AgenticVisionForge
-                    </span>
-                </div>
-                <button @click="sidebarOpen = false" class="p-1 -mr-1 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <svg class="w-6 h-6 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Sidebar Navigation -->
-            <nav class="mt-5 px-2 space-y-1">
-                <a href="/" class="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
-                    <svg class="mr-4 h-6 w-6 text-gray-400 group-hover:text-gray-500 dark:text-gray-400 dark:group-hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    Dashboard
-                </a>
-
-                <a href="/generate" class="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
-                    <svg class="mr-4 h-6 w-6 text-gray-400 group-hover:text-gray-500 dark:text-gray-400 dark:group-hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Generate
-                </a>
-
-                <a href="/gallery" class="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
-                    <svg class="mr-4 h-6 w-6 text-gray-400 group-hover:text-gray-500 dark:text-gray-400 dark:group-hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Gallery
-                </a>
-
-                <a href="/workflows" class="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
-                    <svg class="mr-4 h-6 w-6 text-gray-400 group-hover:text-gray-500 dark:text-gray-400 dark:group-hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    Workflows
-                </a>
-
-                <a href="/models" class="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
-                    <svg class="mr-4 h-6 w-6 text-gray-400 group-hover:text-gray-500 dark:text-gray-400 dark:group-hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                    </svg>
-                    Models
-                </a>
-
-                <a href="/settings" class="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
-                    <svg class="mr-4 h-6 w-6 text-gray-400 group-hover:text-gray-500 dark:text-gray-400 dark:group-hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Settings
-                </a>
-
-                <a href="/docs" class="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
-                    <svg class="mr-4 h-6 w-6 text-gray-400 group-hover:text-gray-500 dark:text-gray-400 dark:group-hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                    Documentation
-                </a>
-            </nav>
-        </div>
-
-        <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col">
-            <!-- Top Navigation -->
-            <header class="bg-white dark:bg-gray-800 shadow">
-                <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-                    <div class="flex justify-between h-16">
-                        <!-- Mobile menu button -->
-                        <div class="flex items-center lg:hidden">
-                            <button @click="sidebarOpen = true" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
-                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <!-- Desktop Navigation -->
-                        <div class="hidden lg:flex lg:items-center lg:space-x-4">
-                            <a href="/" class="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-500 dark:hover:text-gray-300">Dashboard</a>
-                            <a href="/generate" class="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-500 dark:hover:text-gray-300">Generate</a>
-                            <a href="/gallery" class="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-500 dark:hover:text-gray-300">Gallery</a>
-                            <a href="/workflows" class="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-500 dark:hover:text-gray-300">Workflows</a>
-                            <a href="/models" class="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-500 dark:hover:text-gray-300">Models</a>
-                            <a href="/settings" class="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-500 dark:hover:text-gray-300">Settings</a>
-                            <a href="/docs" class="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:text-gray-500 dark:hover:text-gray-300">Documentation</a>
-                        </div>
-
-                        <!-- Right side buttons -->
-                        <div class="flex items-center">
-                            <!-- Dark Mode Toggle -->
-                            <button
-                                @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode.toString())"
-                                class="p-2 text-gray-500 rounded-lg dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            >
-                                <svg
-                                    x-show="!darkMode"
-                                    class="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                                </svg>
-                                <svg
-                                    x-show="darkMode"
-                                    x-cloak
-                                    class="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Page Content -->
-            <main class="flex-1 overflow-y-auto bg-gray-100 dark:bg-gray-900">
-                <div class="py-6">
-                    {% block content %}{% endblock %}
-                </div>
-            </main>
-        </div>
+  <div class="min-h-screen flex">
+    <!-- Overlay for mobile -->
+    <div x-cloak
+         :class="sidebarOpen ? 'block' : 'hidden'"
+         class="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
+         @click="sidebarOpen = false">
     </div>
 
-    <script>
-        // Initialize dark mode from localStorage
-        if (localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
+    <!-- Sidebar -->
+    <aside x-cloak
+           :class="sidebarOpen ? 'translate-x-0 ease-out' : '-translate-x-full ease-in'"
+           class="fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto bg-white dark:bg-gray-800
+                  lg:translate-x-0 lg:static lg:inset-0 transition duration-300 transform"
+    >
+      <!-- Logo / Title -->
+      <div class="flex items-center justify-between p-4">
+        <span class="text-xl font-semibold text-gray-800 dark:text-gray-200">
+          AgenticVisionForge
+        </span>
+        <!-- Close button on mobile -->
+        <button @click="sidebarOpen = false"
+                class="p-1 -mr-1 rounded-md lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700">
+          <svg class="w-6 h-6 text-gray-500 dark:text-gray-400"
+               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
-        // Watch for dark mode changes
-        document.addEventListener('alpine:init', () => {
-            Alpine.effect(() => {
-                if (Alpine.store('darkMode')) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            });
-        });
+      <!-- Navigation -->
+      <nav class="mt-2 px-2 space-y-1">
+        <!-- Dashboard -->
+        <a href="{{ url_for('index') }}"
+           class="flex items-center px-3 py-2 text-sm font-medium
+                  text-gray-600 hover:bg-gray-50 hover:text-gray-900
+                  dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white
+                  rounded-md"
+        >
+          <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 12l2-2m0 0l7-7 7 7
+                     M5 10v10a1 1 0 001 1h3m10-11
+                     l2 2m-2-2v10a1 1 0 01-1 1h-3
+                     m-6 0a1 1 0 001-1v-4a1 1 0
+                     011-1h2a1 1 0 011 1v4a1 1 0
+                     001 1m-6 0h6" />
+          </svg>
+          Dashboard
+        </a>
 
-        // Toast notification function
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            
-            const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
-            
-            toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center`;
-            toast.innerHTML = `
-                <span>${message}</span>
-                <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 5000);
-        }
-    </script>
+        <!-- Gallery -->
+        <a href="{{ url_for('gallery') }}"
+           class="flex items-center px-3 py-2 text-sm font-medium
+                  text-gray-600 hover:bg-gray-50 hover:text-gray-900
+                  dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white
+                  rounded-md"
+        >
+          <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16
+                     m-2-2l1.586-1.586a2 2 0 012.828 0L20 14
+                     m-6-6h.01M6 20h12a2 2 0 002-2
+                     V6a2 2 0 00-2-2H6
+                     a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          All Images
+        </a>
 
-    {% block extra_scripts %}{% endblock %}
+        <!-- Workflows -->
+        <a href="{{ url_for('workflows') }}"
+           class="flex items-center px-3 py-2 text-sm font-medium
+                  text-gray-600 hover:bg-gray-50 hover:text-gray-900
+                  dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white
+                  rounded-md"
+        >
+          <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 11H5m14 0a2 2 0 012 2v6
+                     a2 2 0 01-2 2H5a2 2 0 01-2-2v-6
+                     a2 2 0 012-2m14 0V9a2 2 0 00-2-2
+                     M5 11V9a2 2 0 012-2m0 0V5
+                     a2 2 0 012-2h6a2 2 0 012 2v2
+                     M7 7h10" />
+          </svg>
+          Workflows
+        </a>
+
+        <!-- Models -->
+        <a href="{{ url_for('models') }}"
+           class="flex items-center px-3 py-2 text-sm font-medium
+                  text-gray-600 hover:bg-gray-50 hover:text-gray-900
+                  dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white
+                  rounded-md"
+        >
+          <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 3v2m6-2v2
+                     M9 19v2m6-2v2
+                     M5 9H3m2 6H3
+                     m18-6h-2m2 6h-2
+                     M7 19h10a2 2 0 002-2V7
+                     a2 2 0 00-2-2H7
+                     a2 2 0 00-2 2v10
+                     a2 2 0 002 2zM9 9h6v6H9V9z" />
+          </svg>
+          Models
+        </a>
+
+        <!-- Settings -->
+        <a href="{{ url_for('settings') }}"
+           class="flex items-center px-3 py-2 text-sm font-medium
+                  text-gray-600 hover:bg-gray-50 hover:text-gray-900
+                  dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white
+                  rounded-md"
+        >
+          <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.325 4.317
+                     c.426-1.756 2.924-1.756 3.35 0
+                     a1.724 1.724 0 002.573 1.066
+                     c1.543-.94 3.31.826 2.37 2.37
+                     a1.724 1.724 0 001.065 2.572
+                     c1.756.426 1.756 2.924 0 3.35
+                     a1.724 1.724 0 00-1.066 2.573
+                     c.94 1.543-.826 3.31-2.37 2.37
+                     a1.724 1.724 0 00-2.572 1.065
+                     c-.426 1.756-2.924 1.756-3.35 0
+                     a1.724 1.724 0 00-2.573-1.066
+                     c-1.543.94-3.31-.826-2.37-2.37
+                     a1.724 1.724 0 00-1.065-2.572
+                     c-1.756-.426-1.756-2.924 0-3.35
+                     a1.724 1.724 0 001.066-2.573
+                     c-.94-1.543.826-3.31 2.37-2.37
+                     .996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Settings
+        </a>
+
+        <!-- Docs -->
+        <a href="{{ url_for('docs') }}"
+           class="flex items-center px-3 py-2 text-sm font-medium
+                  text-gray-600 hover:bg-gray-50 hover:text-gray-900
+                  dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white
+                  rounded-md"
+        >
+          <svg class="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6.253v13
+                     m0-13C10.832 5.477 9.246 5 7.5 5
+                     S4.168 5.477 3 6.253v13
+                     C4.168 18.477 5.754 18 7.5 18
+                     s3.332.477 4.5 1.253
+                     m0-13C13.168 5.477 14.754 5 16.5 5
+                     c1.747 0 3.332.477 4.5 1.253v13
+                     C19.832 18.477 18.247 18 16.5 18
+                     c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+          Documentation
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col">
+      <!-- Top Navigation -->
+      <header class="bg-white dark:bg-gray-800 shadow">
+        <div class="mx-auto px-2 sm:px-4 lg:px-8">
+          <div class="flex justify-between h-16 items-center">
+            <!-- Mobile menu button -->
+            <div class="flex items-center lg:hidden">
+              <button @click="sidebarOpen = true"
+                      class="inline-flex items-center justify-center p-2 rounded-md
+                             text-gray-400 hover:text-gray-500 hover:bg-gray-100
+                             dark:hover:bg-gray-700 focus:outline-none">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+            <!-- Right side (dark mode toggle) -->
+            <div class="flex items-center pr-4">
+              <button
+                @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode.toString()); if(darkMode) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark');"
+                class="p-2 text-gray-500 rounded-lg dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <svg
+                  x-show="!darkMode"
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M20.354 15.354A9 9 0 018.646 3.646
+                           9.003 9.003 0 0012 21
+                           a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+                <svg
+                  x-show="darkMode"
+                  x-cloak
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 3v1m0 16v1m9-9h-1
+                           M4 12H3m15.364 6.364l-.707-.707
+                           M6.343 6.343l-.707-.707
+                           m12.728 0l-.707.707
+                           M6.343 17.657l-.707.707
+                           M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="flex-1 overflow-y-auto bg-gray-100 dark:bg-gray-900">
+        <div class="py-6 px-4">
+          {% block content %}{% endblock %}
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+  // Toast notification function
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    const bgColor =
+      type === 'success' ? 'bg-green-500'
+      : type === 'error'   ? 'bg-red-500'
+      : 'bg-blue-500';
+    toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center mb-2`;
+    toast.innerHTML = `
+      <span>${message}</span>
+      <button onclick="this.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.remove();
+    }, 5000);
+  }
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
 </body>
-</html> 
+</html>

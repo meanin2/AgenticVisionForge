@@ -4,307 +4,307 @@
 
 {% block content %}
 <div class="container mx-auto px-4">
-    <!-- Header -->
-    <div class="mb-6">
-        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-            Workflow Management
-        </h2>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Manage and configure your ComfyUI workflows
-        </p>
-    </div>
+  <!-- Header -->
+  <div class="mb-6">
+    <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+      Workflow Management
+    </h2>
+    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+      Manage and configure your ComfyUI workflows. You can upload a new workflow or download/delete your current one.
+    </p>
+  </div>
 
-    <div class="grid gap-6 lg:grid-cols-3">
-        <!-- Current Workflow -->
-        <div class="lg:col-span-2">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                <!-- Workflow Header -->
-                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-                                Current Workflow
-                            </h3>
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                {{ workflow.name if workflow else "No workflow loaded" }}
-                            </p>
-                        </div>
-                        <div class="flex space-x-2">
-                            {% if workflow %}
-                            <button
-                                onclick="downloadWorkflow()"
-                                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
-                            >
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                Download
-                            </button>
-                            <button
-                                onclick="deleteWorkflow()"
-                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                            >
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                Delete
-                            </button>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Workflow Content -->
-                {% if workflow %}
-                <div class="p-6">
-                    <!-- Validation Status -->
-                    <div class="mb-6">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                {% if workflow.is_valid %}
-                                <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                {% else %}
-                                <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                {% endif %}
-                            </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                    Workflow Validation
-                                </h3>
-                                <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                    {% if workflow.is_valid %}
-                                    <p>Workflow is valid and ready to use</p>
-                                    {% else %}
-                                    <p>{{ workflow.validation_error }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Workflow Preview -->
-                    <div class="mb-6">
-                        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                            Workflow Preview
-                        </h4>
-                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                            <pre class="text-sm text-gray-700 dark:text-gray-300">{{ workflow.json | tojson(indent=2) }}</pre>
-                        </div>
-                    </div>
-
-                    <!-- Node Configuration -->
-                    <div>
-                        <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                            Node Configuration
-                        </h4>
-                        <div class="space-y-4">
-                            {% for node in workflow.nodes %}
-                            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                                <h5 class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                    {{ node.title }}
-                                </h5>
-                                <div class="mt-2 space-y-2">
-                                    {% for param in node.params %}
-                                    <div class="flex items-center text-sm">
-                                        <span class="text-gray-500 dark:text-gray-400 w-1/3">{{ param.name }}:</span>
-                                        <span class="text-gray-900 dark:text-gray-100">{{ param.value }}</span>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
+  <div class="grid gap-6 lg:grid-cols-3">
+    <!-- Current Workflow -->
+    <div class="lg:col-span-2">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <!-- Workflow Header -->
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                Current Workflow
+              </h3>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {% if workflow_data %}
+                  {{ workflow_data.get("_meta", {}).get("name", "Workflow Loaded") }}
                 {% else %}
-                <!-- Empty State -->
-                <div class="p-6">
-                    <div class="text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No workflow loaded</h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            Upload a workflow file to get started
-                        </p>
-                    </div>
-                </div>
+                  No workflow loaded
                 {% endif %}
+              </p>
             </div>
+            <div class="flex space-x-2">
+              {% if workflow_data %}
+              <button
+                onclick="downloadWorkflow()"
+                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm
+                       text-sm leading-4 font-medium rounded-md text-gray-700
+                       bg-white hover:bg-gray-50 focus:outline-none focus:ring-2
+                       focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700
+                       dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
+                     viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10
+                           a3 3 0 003-3v-1m-4-4
+                           l-4 4m0 0l-4-4
+                           m4 4V4" />
+                </svg>
+                Download
+              </button>
+              <button
+                onclick="deleteWorkflow()"
+                class="inline-flex items-center px-3 py-2 border border-transparent
+                       text-sm leading-4 font-medium rounded-md text-white
+                       bg-red-600 hover:bg-red-700 focus:outline-none
+                       focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
+                     viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862
+                           a2 2 0 01-1.995-1.858L5 7m5 4v6
+                           m4-6v6m1-10V4a1 1 0 00-1-1
+                           h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Delete
+              </button>
+              {% endif %}
+            </div>
+          </div>
         </div>
 
-        <!-- Upload and Help -->
-        <div class="lg:col-span-1 space-y-6">
-            <!-- Upload Section -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                    Upload Workflow
+        <!-- Workflow Content -->
+        {% if workflow_data %}
+        <div class="p-6">
+          <!-- Validation Status -->
+          <div class="mb-6">
+            <!-- Placeholder for actual validation logic -->
+            {% set is_valid = True %}
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                {% if is_valid %}
+                  <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor"
+                       viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12l2 2 4-4
+                             m6 2a9 9 0 11-18 0
+                             9 9 0 0118 0z"/>
+                  </svg>
+                {% else %}
+                  <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor"
+                       viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 8v4m0 4h.01M21 12
+                             a9 9 0 11-18 0 9 9 0
+                             0118 0z" />
+                  </svg>
+                {% endif %}
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Workflow Validation
                 </h3>
-                <form id="upload-form" class="space-y-4">
-                    <div
-                        class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg dark:border-gray-600"
-                        id="drop-zone"
-                    >
-                        <div class="space-y-1 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                            </svg>
-                            <div class="flex text-sm text-gray-600 dark:text-gray-400">
-                                <label class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                    <span>Upload a file</span>
-                                    <input
-                                        type="file"
-                                        class="sr-only"
-                                        accept=".json"
-                                        onchange="handleFileSelect(this)"
-                                    />
-                                </label>
-                                <p class="pl-1">or drag and drop</p>
-                            </div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">
-                                JSON workflow files only
-                            </p>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Help Section -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-                    How to Create a Workflow
-                </h3>
-                <div class="prose dark:prose-invert">
-                    <ol class="space-y-4 text-sm text-gray-500 dark:text-gray-400">
-                        <li>Open ComfyUI in your browser</li>
-                        <li>Create your image generation pipeline</li>
-                        <li>Add required nodes:
-                            <ul class="mt-2 ml-4 list-disc">
-                                <li>KSampler</li>
-                                <li>VAE Decoder</li>
-                                <li>Checkpoint Loader</li>
-                                <li>Save Image</li>
-                            </ul>
-                        </li>
-                        <li>Test your workflow to ensure it works</li>
-                        <li>Click "Save" to export as JSON</li>
-                        <li>Upload the JSON file here</li>
-                    </ol>
+                <div class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {% if is_valid %}
+                    <p>Workflow is valid and ready to use.</p>
+                  {% else %}
+                    <p>Error details here.</p>
+                  {% endif %}
                 </div>
+              </div>
             </div>
+          </div>
+
+          <!-- Workflow Preview -->
+          <div class="mb-6">
+            <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+              Workflow Preview
+            </h4>
+            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto">
+              <pre class="text-sm text-gray-700 dark:text-gray-300">
+{{ workflow_data | tojson(indent=2) }}
+              </pre>
+            </div>
+          </div>
         </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="p-6">
+          <div class="text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor"
+                 viewBox="0 0 24 24">
+              <path stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 13h6m-3-3v6m5 5H7
+                       a2 2 0 01-2-2V5a2 2 0 012-2
+                       h5.586a1 1 0 01.707.293
+                       l5.414 5.414a1 1 0
+                       01.293.707V19a2 2 0
+                       01-2 2z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+              No workflow loaded
+            </h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Upload a workflow file to get started
+            </p>
+          </div>
+        </div>
+        {% endif %}
+      </div>
     </div>
+
+    <!-- Upload and Help -->
+    <div class="lg:col-span-1 space-y-6">
+      <!-- Upload Section -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+          Upload Workflow
+        </h3>
+        <form id="upload-form" class="space-y-4">
+          <div
+            class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300
+                   border-dashed rounded-lg dark:border-gray-600"
+            id="drop-zone"
+          >
+            <div class="space-y-1 text-center">
+              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none"
+                   stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5
+                         0 1115.9 6L16 6a5 5 0 011 9.9
+                         M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <div class="flex text-sm text-gray-600 dark:text-gray-400">
+                <label class="relative cursor-pointer rounded-md font-medium
+                             text-blue-600 hover:text-blue-500 focus-within:outline-none
+                             focus-within:ring-2 focus-within:ring-offset-2
+                             focus-within:ring-blue-500">
+                  <span>Upload a file</span>
+                  <input
+                    type="file"
+                    class="sr-only"
+                    accept=".json"
+                    onchange="handleFileSelect(this)"
+                  />
+                </label>
+                <p class="pl-1">or drag and drop</p>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                JSON workflow files only
+              </p>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Help Section -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+          How to Create a Workflow
+        </h3>
+        <div class="prose dark:prose-invert">
+          <ol class="space-y-4 text-sm text-gray-500 dark:text-gray-400">
+            <li>Open ComfyUI in your browser.</li>
+            <li>Create your image generation pipeline.</li>
+            <li>
+              Add required nodes:
+              <ul class="mt-2 ml-4 list-disc">
+                <li>KSampler</li>
+                <li>VAE Decoder</li>
+                <li>Checkpoint Loader</li>
+                <li>Save Image</li>
+              </ul>
+            </li>
+            <li>Test your workflow to ensure it works.</li>
+            <li>Click "Save" to export as JSON.</li>
+            <li>Upload the JSON file here.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-// File upload handling
 const dropZone = document.getElementById('drop-zone');
-
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, preventDefaults, false);
+['dragenter','dragover','dragleave','drop'].forEach(eName => {
+  dropZone.addEventListener(eName, preventDefaults, false);
 });
-
-function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-}
-
-['dragenter', 'dragover'].forEach(eventName => {
-    dropZone.addEventListener(eventName, highlight, false);
+function preventDefaults(e){ e.preventDefault(); e.stopPropagation(); }
+['dragenter','dragover'].forEach(eName => {
+  dropZone.addEventListener(eName, ()=>highlight(true), false);
 });
-
-['dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, unhighlight, false);
+['dragleave','drop'].forEach(eName => {
+  dropZone.addEventListener(eName, ()=>highlight(false), false);
 });
-
-function highlight(e) {
-    dropZone.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+function highlight(on) {
+  if(on){
+    dropZone.classList.add('border-blue-500','bg-blue-50','dark:bg-blue-900/20');
+  } else {
+    dropZone.classList.remove('border-blue-500','bg-blue-50','dark:bg-blue-900/20');
+  }
 }
-
-function unhighlight(e) {
-    dropZone.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
-}
-
 dropZone.addEventListener('drop', handleDrop, false);
-
 function handleDrop(e) {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    handleFiles(files);
+  const dt = e.dataTransfer;
+  const files = dt.files;
+  handleFiles(files);
 }
-
-function handleFileSelect(input) {
-    handleFiles(input.files);
+function handleFileSelect(input){
+  handleFiles(input.files);
 }
-
-function handleFiles(files) {
-    if (files.length > 0) {
-        const file = files[0];
-        if (file.type === 'application/json' || file.name.endsWith('.json')) {
-            uploadWorkflow(file);
-        } else {
-            showToast('Please upload a JSON file', 'error');
-        }
+function handleFiles(files){
+  if(files.length>0){
+    const file=files[0];
+    if(file.type==='application/json' || file.name.toLowerCase().endsWith('.json')){
+      uploadWorkflow(file);
+    } else {
+      showToast('Please upload a JSON file','error');
     }
+  }
 }
-
-async function uploadWorkflow(file) {
-    const formData = new FormData();
-    formData.append('workflow', file);
-    
-    try {
-        const response = await fetch('/workflows/upload', {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to upload workflow');
-        }
-        
-        showToast('Workflow uploaded successfully', 'success');
-        setTimeout(() => window.location.reload(), 1000);
-        
-    } catch (error) {
-        showToast('Error: ' + error.message, 'error');
-    }
+async function uploadWorkflow(file){
+  const formData=new FormData();
+  formData.append('file',file);
+  try{
+    const response=await fetch('/workflows',{method:'POST',body:formData});
+    if(!response.ok) throw new Error('Failed to upload workflow');
+    showToast('Workflow uploaded successfully','success');
+    setTimeout(()=>window.location.reload(),1000);
+  }catch(err){
+    showToast('Error: '+err.message,'error');
+  }
 }
-
-// Download workflow
-function downloadWorkflow() {
-    const a = document.createElement('a');
-    a.href = '/workflows/download';
-    a.download = 'workflow.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+function downloadWorkflow(){
+  const a=document.createElement('a');
+  a.href='/workflows/download';
+  a.download='workflow.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
-
-// Delete workflow
-async function deleteWorkflow() {
-    if (confirm('Are you sure you want to delete this workflow? This action cannot be undone.')) {
-        try {
-            const response = await fetch('/workflows/delete', {
-                method: 'POST'
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to delete workflow');
-            }
-            
-            showToast('Workflow deleted successfully', 'success');
-            setTimeout(() => window.location.reload(), 1000);
-            
-        } catch (error) {
-            showToast('Error: ' + error.message, 'error');
-        }
-    }
+async function deleteWorkflow(){
+  if(!confirm('Are you sure you want to delete this workflow? This action cannot be undone.')){
+    return;
+  }
+  try{
+    const response=await fetch('/workflows/delete',{method:'POST'});
+    if(!response.ok) throw new Error('Failed to delete workflow');
+    showToast('Workflow deleted successfully','success');
+    setTimeout(()=>window.location.reload(),1000);
+  }catch(err){
+    showToast('Error: '+err.message,'error');
+  }
 }
 </script>
-{% endblock %} 
+{% endblock %}

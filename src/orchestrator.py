@@ -154,13 +154,42 @@ def synthesize_learning(prev_analyses, curr_analysis, prev_prompt, curr_prompt):
     
     return "; ".join(synthesis) if synthesis else "No clear patterns identified yet"
 
-def run_iterations(config, goal, run_directory):
+def run_iterations(config, goal, run_directory, progress_callback=None):
     """Main iteration loop for generating and refining images."""
+    if progress_callback:
+        progress_callback({
+            'stage': 'setup',
+            'message': 'Setting up generation...',
+            'progress': 0
+        })
+    
     print("\n=== Understanding Goal ===")
+    
+    # Set up directories
+    generations_dir = os.path.join(run_directory, "generations")
+    os.makedirs(generations_dir, exist_ok=True)
+    
+    # Update config to use the generations directory
+    config["comfyui"]["output_dir"] = generations_dir
+    
+    if progress_callback:
+        progress_callback({
+            'stage': 'analysis',
+            'message': 'Analyzing goal...',
+            'progress': 5
+        })
+    
     # 1. Initial goal analysis
     analysis = understand_goal(goal, config)
     print("Goal Analysis:")
     print(analysis)
+
+    if progress_callback:
+        progress_callback({
+            'stage': 'prompt',
+            'message': 'Creating initial prompt...',
+            'progress': 10
+        })
 
     # 2. Create initial T5 prompt
     current_prompt = create_initial_prompt(goal, analysis, config)
@@ -184,9 +213,28 @@ def run_iterations(config, goal, run_directory):
         iteration += 1
         print(f"\n=== Iteration {iteration} ===")
 
+        if progress_callback:
+            progress_callback({
+                'stage': 'generation',
+                'message': f'Generating image {iteration}/{max_iters}...',
+                'progress': 10 + (iteration * 90 / max_iters),
+                'iteration': iteration,
+                'max_iterations': max_iters
+            })
+
         # 1) Generate image
         image_path = generate_image(current_prompt, config, iteration)
         print(f"Generated image: {image_path}")
+
+        if progress_callback:
+            progress_callback({
+                'stage': 'analysis',
+                'message': f'Analyzing image {iteration}/{max_iters}...',
+                'progress': 10 + (iteration * 90 / max_iters),
+                'iteration': iteration,
+                'max_iterations': max_iters,
+                'current_image': image_path
+            })
 
         # 2) Get unbiased description of the image
         config['current_goal'] = goal  # Add goal to config for second stage
@@ -223,10 +271,28 @@ def run_iterations(config, goal, run_directory):
         ]
         
         if any(indicator in alignment_analysis.lower() for indicator in success_indicators):
+            if progress_callback:
+                progress_callback({
+                    'stage': 'complete',
+                    'message': 'Goal achieved successfully!',
+                    'progress': 100,
+                    'iteration': iteration,
+                    'max_iterations': max_iters,
+                    'status': 'success'
+                })
             print("\nGoal achieved successfully!")
             break
 
         # 6) Create refined prompt for next iteration
+        if progress_callback:
+            progress_callback({
+                'stage': 'refinement',
+                'message': f'Refining prompt for iteration {iteration + 1}...',
+                'progress': 10 + (iteration * 90 / max_iters),
+                'iteration': iteration,
+                'max_iterations': max_iters
+            })
+
         previous_prompt = current_prompt
         current_prompt = refine_prompt(
             current_prompt,
@@ -241,5 +307,15 @@ def run_iterations(config, goal, run_directory):
         # Update the log with the new prompt
         with open(iteration_log_path, "w", encoding="utf-8") as f:
             json.dump(log_data, f, indent=2)
+
+    if progress_callback:
+        progress_callback({
+            'stage': 'complete',
+            'message': 'All iterations completed',
+            'progress': 100,
+            'iteration': iteration,
+            'max_iterations': max_iters,
+            'status': 'complete'
+        })
 
     print("\nAll iterations completed.") 

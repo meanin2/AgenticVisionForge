@@ -21,15 +21,19 @@
                 General Settings
             </h3>
 
-            <form class="space-y-6">
+            <!-- First form for general settings -->
+            <form class="space-y-6" id="general-settings-form">
                 <!-- Default Output Directory -->
                 <div>
                     <label class="block text-sm">
                         <span class="text-gray-700 dark:text-gray-400">Default Output Directory</span>
                         <input
                             type="text"
-                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700 focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
-                            value="{{ config.default_output_dir }}"
+                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700
+                                   focus:border-blue-400 focus:outline-none focus:shadow-outline-blue
+                                   dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
+                            name="default_output_dir"
+                            value="{{ config.get('default_output_dir','outputs/') }}"
                             placeholder="outputs/"
                         />
                     </label>
@@ -41,10 +45,13 @@
                         <span class="text-gray-700 dark:text-gray-400">Default Max Iterations</span>
                         <input
                             type="number"
-                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700 focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
-                            value="{{ config.default_max_iterations }}"
+                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700
+                                   focus:border-blue-400 focus:outline-none focus:shadow-outline-blue
+                                   dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
+                            name="default_max_iterations"
+                            value="{{ config.get('default_max_iterations',10) }}"
                             min="1"
-                            max="10"
+                            max="50"
                         />
                     </label>
                 </div>
@@ -53,10 +60,15 @@
                 <div>
                     <label class="block text-sm">
                         <span class="text-gray-700 dark:text-gray-400">Theme</span>
-                        <select class="block w-full mt-1 text-sm dark:text-gray-300 dark:border-gray-600 dark:bg-gray-700 form-select focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:focus:shadow-outline-gray">
-                            <option value="system" {% if config.theme == "system" %}selected{% endif %}>System</option>
-                            <option value="light" {% if config.theme == "light" %}selected{% endif %}>Light</option>
-                            <option value="dark" {% if config.theme == "dark" %}selected{% endif %}>Dark</option>
+                        <select
+                            name="theme"
+                            class="block w-full mt-1 text-sm dark:text-gray-300 dark:border-gray-600 dark:bg-gray-700
+                                   form-select focus:border-blue-400 focus:outline-none focus:shadow-outline-blue
+                                   dark:focus:shadow-outline-gray"
+                        >
+                            <option value="system" {% if config.get('theme','system') == "system" %}selected{% endif %}>System</option>
+                            <option value="light" {% if config.get('theme','system') == "light" %}selected{% endif %}>Light</option>
+                            <option value="dark"  {% if config.get('theme','system') == "dark"  %}selected{% endif %}>Dark</option>
                         </select>
                     </label>
                 </div>
@@ -65,7 +77,9 @@
                 <div>
                     <button
                         type="submit"
-                        class="w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring btn-animate"
+                        class="w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors
+                               duration-150 bg-blue-600 border border-transparent rounded-lg
+                               hover:bg-blue-700 focus:outline-none focus:ring btn-animate"
                     >
                         Save Settings
                     </button>
@@ -79,15 +93,18 @@
                 Advanced Settings
             </h3>
 
-            <form class="space-y-6">
+            <form class="space-y-6" id="advanced-settings-form">
                 <!-- ComfyUI Server URL -->
                 <div>
                     <label class="block text-sm">
                         <span class="text-gray-700 dark:text-gray-400">ComfyUI Server URL</span>
                         <input
                             type="url"
-                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700 focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
-                            value="{{ config.comfyui_url }}"
+                            name="comfyui_url"
+                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700
+                                   focus:border-blue-400 focus:outline-none focus:shadow-outline-blue
+                                   dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
+                            value="{{ config.get('comfyui_url','http://localhost:8188') }}"
                             placeholder="http://localhost:8188"
                         />
                     </label>
@@ -99,8 +116,11 @@
                         <span class="text-gray-700 dark:text-gray-400">Ollama Server URL</span>
                         <input
                             type="url"
-                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700 focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
-                            value="{{ config.ollama_url }}"
+                            name="ollama_url"
+                            class="block w-full mt-1 text-sm dark:border-gray-600 dark:bg-gray-700
+                                   focus:border-blue-400 focus:outline-none focus:shadow-outline-blue
+                                   dark:text-gray-300 dark:focus:shadow-outline-gray form-input"
+                            value="{{ config.get('ollama_url','http://localhost:11434') }}"
                             placeholder="http://localhost:11434"
                         />
                     </label>
@@ -111,8 +131,10 @@
                     <label class="flex items-center dark:text-gray-400">
                         <input
                             type="checkbox"
-                            class="text-blue-600 form-checkbox focus:border-blue-400 focus:outline-none focus:shadow-outline-blue dark:focus:shadow-outline-gray"
-                            {% if config.debug_mode %}checked{% endif %}
+                            name="debug_mode"
+                            class="text-blue-600 form-checkbox focus:border-blue-400 focus:outline-none
+                                   focus:shadow-outline-blue dark:focus:shadow-outline-gray"
+                            {% if config.get('debug_mode',False) %}checked{% endif %}
                         />
                         <span class="ml-2">
                             Enable Debug Mode
@@ -124,7 +146,9 @@
                 <div>
                     <button
                         type="submit"
-                        class="w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring btn-animate"
+                        class="w-full px-4 py-2 text-sm font-medium leading-5 text-white transition-colors
+                               duration-150 bg-blue-600 border border-transparent rounded-lg
+                               hover:bg-blue-700 focus:outline-none focus:ring btn-animate"
                     >
                         Save Advanced Settings
                     </button>
@@ -148,7 +172,8 @@
                 </div>
                 <button
                     onclick="confirmReset()"
-                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none
+                           focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                 >
                     Reset Settings
                 </button>
@@ -162,7 +187,8 @@
                 </div>
                 <button
                     onclick="confirmClearCache()"
-                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none
+                           focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                 >
                     Clear Cache
                 </button>
@@ -174,24 +200,13 @@
 
 {% block extra_scripts %}
 <script>
-// Form submission for general settings
-document.querySelector('form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    await saveSettings(this, '/settings/general');
-});
-
-// Form submission for advanced settings
-document.querySelectorAll('form')[1].addEventListener('submit', async function(e) {
-    e.preventDefault();
-    await saveSettings(this, '/settings/advanced');
-});
-
 async function saveSettings(form, endpoint) {
     const formData = new FormData(form);
     const submitButton = form.querySelector('button[type="submit"]');
     
     // Disable submit button and show loading state
     submitButton.disabled = true;
+    const originalText = submitButton.textContent;
     submitButton.innerHTML = `
         <div class="spinner inline-block mr-2"></div>
         Saving...
@@ -208,16 +223,28 @@ async function saveSettings(form, endpoint) {
         }
         
         const data = await response.json();
-        showToast('Settings saved successfully!', 'success');
+        showToast(data.message || 'Settings saved successfully!', 'success');
         
     } catch (error) {
         showToast('Error: ' + error.message, 'error');
     } finally {
         // Reset button state
         submitButton.disabled = false;
-        submitButton.textContent = submitButton.textContent.includes('Advanced') ? 'Save Advanced Settings' : 'Save Settings';
+        submitButton.textContent = originalText;
     }
 }
+
+// General settings form
+document.getElementById('general-settings-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    saveSettings(this, '/settings/general');
+});
+
+// Advanced settings form
+document.getElementById('advanced-settings-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    saveSettings(this, '/settings/advanced');
+});
 
 function confirmReset() {
     if (confirm('Are you sure you want to reset all settings to their default values? This action cannot be undone.')) {
@@ -235,7 +262,8 @@ async function resetSettings() {
             throw new Error('Failed to reset settings');
         }
         
-        showToast('Settings have been reset to defaults', 'success');
+        const data = await response.json();
+        showToast(data.message || 'Settings reset to defaults', 'success');
         setTimeout(() => window.location.reload(), 1500);
         
     } catch (error) {
@@ -259,11 +287,12 @@ async function clearCache() {
             throw new Error('Failed to clear cache');
         }
         
-        showToast('Cache cleared successfully', 'success');
+        const data = await response.json();
+        showToast(data.message || 'Cache cleared', 'success');
         
     } catch (error) {
         showToast('Error: ' + error.message, 'error');
     }
 }
 </script>
-{% endblock %} 
+{% endblock %}

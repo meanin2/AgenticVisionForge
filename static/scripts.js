@@ -125,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeGallery();
     initializeForm();
     initializeProgress();
+    initializeDragDrop();
 });
 
 // Keyboard shortcuts
@@ -192,7 +193,6 @@ function initializeDragDrop() {
     function handleDrop(e) {
         const dt = e.dataTransfer;
         const files = dt.files;
-
         handleFiles(files);
     }
 
@@ -200,16 +200,39 @@ function initializeDragDrop() {
         ([...files]).forEach(uploadFile);
     }
 
-    function uploadFile(file) {
+    async function uploadFile(file) {
         const formData = new FormData();
         formData.append('file', file);
 
-        fetch('/upload', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(success => showToast('File uploaded successfully!', 'success'))
-        .catch(error => showToast('Error uploading file', 'error'));
+        try {
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Error uploading file');
+            }
+            showToast(data.message || 'File uploaded successfully!', 'success');
+        } catch (error) {
+            showToast('Error uploading file: ' + error.message, 'error');
+        }
     }
-} 
+}
+
+// DELETE image from gallery placeholder fix:
+async function deleteGalleryImage(imageId) {
+    try {
+        const resp = await fetch(`/api/images/${imageId}`, {
+            method: 'DELETE'
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            throw new Error(data.error || 'Failed to delete image');
+        }
+        showToast(data.message || 'Image deleted', 'success');
+        // Optionally refresh or remove the image from DOM
+    } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+    }
+}

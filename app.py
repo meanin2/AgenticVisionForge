@@ -9,6 +9,7 @@ from src.orchestrator import run_iterations
 
 app = Flask(__name__)
 
+
 # ----------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------
@@ -74,28 +75,54 @@ def index():
 
 
 # ----------------------------------------------------------------
-# New Route: /create_run (POST) 
-# Quickly creates a run and returns run_name
+# Gallery Route
+# ----------------------------------------------------------------
+
+@app.route("/gallery")
+def gallery():
+    """
+    Display all generated images across all runs, if you need a ‘gallery.’
+    This route must exist because base.html calls url_for('gallery').
+    """
+    config = load_config()
+    runs_dir = config.get("runs_directory", "runs")
+
+    images = []
+    if os.path.exists(runs_dir):
+        # Go through each run folder and gather .png images
+        for run_name in sorted(os.listdir(runs_dir), reverse=True):
+            run_path = os.path.join(runs_dir, run_name)
+            if os.path.isdir(run_path):
+                generations_path = os.path.join(run_path, "generations")
+                if os.path.exists(generations_path):
+                    for img_file in sorted(os.listdir(generations_path)):
+                        if img_file.endswith('.png'):
+                            images.append({
+                                "url": f"/runs/{run_name}/generations/{img_file}",
+                                "goal": run_name,
+                                "date": run_name,
+                            })
+    return render_template("gallery.html", images=images)
+
+
+# ----------------------------------------------------------------
+# New Route: /create_run (POST) - Quickly creates a run
 # ----------------------------------------------------------------
 
 @app.route("/create_run", methods=["POST"])
 def create_run():
     """
-    Receives the form data for generating an image. Instead of blocking
-    the request with run_iterations, it simply:
-
-    1. Creates a run directory
-    2. Merges config with user-provided overrides (goal, max_iterations, etc.)
-    3. Saves a config_dump.json in the run directory
-    4. Returns { run_name: ... }
-
+    Receives form data for generating an image. Instead of blocking with
+    run_iterations, it simply:
+      1) Creates run directory
+      2) Saves user input + config
+      3) Returns { run_name: ... }
     The actual generation is triggered separately with /start_run/<run_name>.
     """
     try:
         config = load_config()
         runs_dir = config.get("runs_directory", "runs")
 
-        # Parse form
         goal = request.form.get("goal", "").strip()
         if not goal:
             return jsonify({"error": "Goal is required"}), 400
@@ -104,7 +131,6 @@ def create_run():
         run_name = request.form.get("run_name", "").strip() or datetime.now().strftime("%Y%m%d-%H%M%S")
         output_dir = request.form.get("output_dir", "").strip()
 
-        # Apply overrides
         if max_iterations:
             try:
                 config["iterations"]["max_iterations"] = int(max_iterations)
@@ -114,13 +140,12 @@ def create_run():
         if output_dir:
             config["comfyui"]["output_dir"] = output_dir
 
-        # Create run directory
+        # Create run folder
         run_path = os.path.join(runs_dir, run_name)
         os.makedirs(run_path, exist_ok=True)
         os.makedirs(os.path.join(run_path, "generations"), exist_ok=True)
 
-        # Save the relevant user input + config in run_path
-        # We'll read it in /start_run/<run_name>.
+        # Save to config_dump.json
         user_data = {
             "goal": goal,
             "config": config
@@ -136,14 +161,13 @@ def create_run():
 
 
 # ----------------------------------------------------------------
-# New Route: /start_run/<run_name> (POST)
-# Actually starts the generation in a background thread
+# Starting the run in background
 # ----------------------------------------------------------------
 
 def background_run_iterations(run_path):
     """
-    This function runs in a thread to call run_iterations
-    with the stored config and goal from config_dump.json
+    This function runs in a thread, calls run_iterations with 
+    the stored config & goal from config_dump.json
     """
     try:
         with open(os.path.join(run_path, "config_dump.json"), "r") as f:
@@ -155,7 +179,6 @@ def background_run_iterations(run_path):
         with open(started_flag, "w") as f:
             f.write("Run started.")
 
-        # Actually run the iterative process
         run_iterations(config, goal, run_path)
 
     except Exception as e:
@@ -163,10 +186,6 @@ def background_run_iterations(run_path):
 
 @app.route("/start_run/<run_name>", methods=["POST"])
 def start_run(run_name):
-    """
-    If not already started, spawn a thread to run_iterations. 
-    Returns JSON success immediately.
-    """
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
     run_path = os.path.join(runs_dir, run_name)
@@ -174,12 +193,10 @@ def start_run(run_name):
     if not os.path.exists(run_path):
         return jsonify({"error": "Run not found"}), 404
 
-    # Check if already started
     started_flag = os.path.join(run_path, "started.txt")
     if os.path.exists(started_flag):
         return jsonify({"message": "Run already started"}), 200
 
-    # Spawn a background thread
     thread = threading.Thread(target=background_run_iterations, args=(run_path,))
     thread.daemon = True
     thread.start()
@@ -188,16 +205,11 @@ def start_run(run_name):
 
 
 # ----------------------------------------------------------------
-# Results / Status
+# Results & Status
 # ----------------------------------------------------------------
 
 @app.route("/results/<run_name>")
 def results(run_name):
-    """
-    Display images and logs for a given run.
-    The page polls /results/<run_name>/status for updates,
-    and also calls /start_run/<run_name> if the run isn't started.
-    """
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
     run_path = os.path.join(runs_dir, run_name)
@@ -224,7 +236,6 @@ def results(run_name):
             analysis = data.get("analysis")
 
     max_iters = 10
-    # If the config is in config_dump.json, we can read to see if the user override is set
     config_dump = os.path.join(run_path, "config_dump.json")
     if os.path.exists(config_dump):
         with open(config_dump, "r") as f:
@@ -239,21 +250,16 @@ def results(run_name):
                            analysis=analysis,
                            max_iterations=max_iters)
 
-
 @app.route("/results/<run_name>/status")
 def results_status(run_name):
-    """
-    Returns a JSON with the current images, logs, if done, and if started.
-    The front-end uses this for polling updates.
-    """
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
     run_path = os.path.join(runs_dir, run_name)
-    generations_path = os.path.join(run_path, "generations")
 
     if not os.path.exists(run_path):
         return jsonify({"error": "Run not found"}), 404
 
+    generations_path = os.path.join(run_path, "generations")
     images = []
     logs = []
     done = False
@@ -273,9 +279,7 @@ def results_status(run_name):
     if os.path.exists(started_flag):
         started = True
 
-    # Decide if done
-    #   1) If we reached max_iterations
-    #   2) If canceled.txt is present
+    # Check done
     max_iters = config["iterations"].get("max_iterations", 10)
     config_dump = os.path.join(run_path, "config_dump.json")
     if os.path.exists(config_dump):
@@ -297,15 +301,15 @@ def results_status(run_name):
 
 
 # ----------------------------------------------------------------
-# Serving Generated Images, Logs, and Deletion
+# Serving Generated Images, Logs, Deletion
 # ----------------------------------------------------------------
 
 @app.route("/runs/<run_name>/generations/<filename>")
 def serve_generated_image(run_name, filename):
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
-    run_path = os.path.join(runs_dir, run_name, "generations")
-    return send_from_directory(run_path, filename)
+    gen_path = os.path.join(runs_dir, run_name, "generations")
+    return send_from_directory(gen_path, filename)
 
 @app.route("/runs/<run_name>/<filename>")
 def serve_run_file(run_name, filename):
@@ -330,7 +334,6 @@ def delete_run(run_name):
         app.logger.exception("Error deleting run directory:")
         return jsonify({"error": f"Failed to delete run: {str(e)}"}), 500
 
-# Cancel mid-run
 @app.route("/runs/<run_name>/cancel", methods=["POST"])
 def cancel_run(run_name):
     config = load_config()
@@ -342,7 +345,6 @@ def cancel_run(run_name):
         return jsonify({"message": "Run canceled"})
     return jsonify({"error": "Run not found"}), 404
 
-# Edit run goal
 @app.route("/runs/<run_name>/goal", methods=["POST"])
 def edit_run_goal(run_name):
     data = request.get_json() or {}
@@ -368,7 +370,7 @@ def edit_run_goal(run_name):
 
 
 # ----------------------------------------------------------------
-# Models, Workflows, Settings, etc. (unchanged from prior except placeholders)
+# Models, Workflows, Settings, etc.
 # ----------------------------------------------------------------
 
 @app.route("/models", methods=["GET", "POST"])

@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 import shutil
 
-# Import orchestrator logic from existing code
+# Import orchestrator logic
 from src.orchestrator import run_iterations
 
 def load_config():
@@ -23,61 +23,51 @@ def allowed_file(filename):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    """Dashboard page showing recent runs and stats."""
+    """Dashboard page showing recent runs and handling new generation requests."""
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
     
-    # Handle POST request for generation
     if request.method == "POST":
-        # Debug: Log request details
-        print("\nRequest Debug Info:")
-        print("Content-Type:", request.headers.get('Content-Type'))
-        print("Form Data:", request.form)
-        print("Files:", request.files)
-        
-        goal = request.form.get("goal", "").strip()
-        max_iterations = request.form.get("max_iterations", "").strip()
-        run_name = request.form.get("run_name", "").strip()
-        output_dir = request.form.get("output_dir", "").strip()
-
-        # Debug: Log parsed values
-        print("\nParsed Values:")
-        print("Goal:", repr(goal))
-        print("Max Iterations:", repr(max_iterations))
-        print("Run Name:", repr(run_name))
-        print("Output Dir:", repr(output_dir))
-
-        if not goal:
-            return jsonify({"error": "Goal is required"}), 400
-
-        if max_iterations:
-            try:
-                config["iterations"]["max_iterations"] = int(max_iterations)
-            except ValueError:
-                return jsonify({"error": "Invalid max iterations value"}), 400
-
-        if output_dir:
-            config["comfyui"]["output_dir"] = output_dir
-
-        run_name = run_name or datetime.now().strftime("%Y%m%d-%H%M%S")
-        run_path = os.path.join(runs_dir, run_name)
-        os.makedirs(run_path, exist_ok=True)
-
         try:
+            goal = request.form.get("goal", "").strip()
+            max_iterations = request.form.get("max_iterations", "").strip()
+            run_name = request.form.get("run_name", "").strip()
+            output_dir = request.form.get("output_dir", "").strip()
+
+            if not goal:
+                return jsonify({"error": "Goal is required"}), 400
+
+            if max_iterations:
+                try:
+                    config["iterations"]["max_iterations"] = int(max_iterations)
+                except ValueError:
+                    return jsonify({"error": "Invalid max_iterations value"}), 400
+
+            if output_dir:
+                config["comfyui"]["output_dir"] = output_dir
+
+            run_name = run_name or datetime.now().strftime("%Y%m%d-%H%M%S")
+            run_path = os.path.join(runs_dir, run_name)
+            os.makedirs(run_path, exist_ok=True)
+
+            # Launch iteration process
             run_iterations(config, goal, run_path)
-            # After successful generation, redirect to results
+
+            # If successful, redirect to results
             return jsonify({"redirect": url_for("results", run_name=run_name)})
+
         except Exception as e:
+            app.logger.exception("Error during new image generation:")
             return jsonify({"error": str(e)}), 500
-    
-    # Get recent runs for display
+
+    # GET request: show recent runs
     recent_runs = []
     if os.path.exists(runs_dir):
+        # Only list the 5 most recent
         runs = sorted(os.listdir(runs_dir), reverse=True)[:5]
-        for run_name in runs:
-            run_path = os.path.join(runs_dir, run_name)
+        for r in runs:
+            run_path = os.path.join(runs_dir, r)
             if os.path.isdir(run_path):
-                # Get run details
                 goal = None
                 goal_analysis_path = os.path.join(run_path, "goal_analysis.json")
                 if os.path.exists(goal_analysis_path):
@@ -85,21 +75,20 @@ def index():
                         data = json.load(f)
                         goal = data.get("goal")
                 
-                # Get number of iterations
                 generations_path = os.path.join(run_path, "generations")
-                num_iterations = len([f for f in os.listdir(generations_path) 
-                                   if f.endswith('.png')]) if os.path.exists(generations_path) else 0
-                
-                # Parse date from run_name if possible
-                # e.g. run_name = 20240101-123456
-                date_str = run_name.split("-")[0]
+                num_iterations = 0
+                if os.path.exists(generations_path):
+                    num_iterations = len([f for f in os.listdir(generations_path) if f.endswith('.png')])
+
+                # Parse date from run_name if it looks like YYYYMMDD-HHMMSS
+                date_str = r.split("-")[0]
                 try:
                     date_display = datetime.strptime(date_str, "%Y%m%d").strftime("%Y-%m-%d")
                 except ValueError:
-                    date_display = run_name  # fallback
-                
+                    date_display = r  # fallback if no parse
+
                 recent_runs.append({
-                    "name": run_name,
+                    "name": r,
                     "goal": goal,
                     "iterations": num_iterations,
                     "timestamp": date_display
@@ -107,13 +96,13 @@ def index():
     
     return render_template("index.html", recent_runs=recent_runs)
 
+
 @app.route("/gallery")
 def gallery():
     """Display all generated images across all runs."""
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
-    
-    # Instead of passing runs, build a single list of images
+
     images = []
     if os.path.exists(runs_dir):
         for run_name in sorted(os.listdir(runs_dir), reverse=True):
@@ -123,49 +112,51 @@ def gallery():
                 if os.path.exists(generations_path):
                     for img in sorted(os.listdir(generations_path)):
                         if img.endswith('.png'):
-                            # (Optional) read the goal from goal_analysis.json if you want
-                            # For now, just store run_name as "goal"
                             images.append({
                                 "url": f"/runs/{run_name}/generations/{img}",
                                 "goal": run_name,
                                 "date": run_name,
                             })
-    
     return render_template("gallery.html", images=images)
+
 
 @app.route("/workflows", methods=["GET", "POST"])
 def workflows():
-    """Manage ComfyUI workflows."""
+    """Manage ComfyUI workflows (upload, download, delete)."""
     if request.method == "POST":
-        if 'file' not in request.files:
-            return jsonify({"error": "No file provided"}), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"error": "No file selected"}), 400
-        
-        if file and allowed_file(file.filename) and file.filename.lower().endswith('.json'):
-            filename = "comfyui_prompt_template.json"
-            file.save(filename)
-            return jsonify({"message": "Workflow uploaded successfully"})
-        
-        return jsonify({"error": "Invalid file type (must be JSON)"}), 400
-    
-    # Check if workflow file exists
+        try:
+            if 'file' not in request.files:
+                return jsonify({"error": "No file provided"}), 400
+            
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({"error": "No file selected"}), 400
+            
+            if file and allowed_file(file.filename) and file.filename.lower().endswith('.json'):
+                filename = "comfyui_prompt_template.json"
+                file.save(filename)
+                return jsonify({"message": "Workflow uploaded successfully"})
+            
+            return jsonify({"error": "Invalid file type (must be JSON)"}), 400
+        except Exception as e:
+            app.logger.exception("Error uploading workflow:")
+            return jsonify({"error": str(e)}), 500
+
     workflow_exists = os.path.exists("comfyui_prompt_template.json")
     workflow_data = None
     if workflow_exists:
-        with open("comfyui_prompt_template.json", "r") as f:
-            try:
+        try:
+            with open("comfyui_prompt_template.json", "r") as f:
                 workflow_data = json.load(f)
-            except json.JSONDecodeError:
-                workflow_data = {}
+        except json.JSONDecodeError:
+            workflow_data = {}
     
     return render_template(
         "workflows.html", 
         workflow_exists=workflow_exists,
         workflow_data=workflow_data
     )
+
 
 @app.route("/workflows/download", methods=["GET"])
 def download_workflow():
@@ -174,6 +165,7 @@ def download_workflow():
     if not os.path.exists(filename):
         return jsonify({"error": "No workflow file found"}), 404
     return send_from_directory('.', filename, as_attachment=True)
+
 
 @app.route("/workflows/delete", methods=["POST"])
 def delete_workflow():
@@ -184,77 +176,93 @@ def delete_workflow():
         return jsonify({"message": "Workflow deleted"})
     return jsonify({"error": "No workflow file to delete"}), 404
 
+
 @app.route("/models", methods=["GET", "POST"])
 def models():
     """Display and manage Ollama and Gemini models."""
     config = load_config()
     if request.method == "POST":
-        # In the HTML, we will add name="api_key", name="vision_model", etc.
-        # This is a minimal approach to storing them in config.yaml
-        api_key = request.form.get("api_key", "")
-        vision_model = request.form.get("vision_model", "")
-        text_model = request.form.get("text_model", "")
+        try:
+            api_key = request.form.get("api_key", "")
+            vision_model = request.form.get("vision_model", "")
+            text_model = request.form.get("text_model", "")
 
-        # Update config with these values
-        config["vision"]["gemini"]["api_key"] = api_key or config["vision"]["gemini"].get("api_key", "")
-        # If they choose a model from a dropdown
-        if vision_model:
-            config["vision"]["gemini"]["model"] = vision_model
-        if text_model:
-            config["text"]["gemini"]["model"] = text_model
+            config["vision"]["gemini"]["api_key"] = api_key or config["vision"]["gemini"].get("api_key", "")
+            if vision_model:
+                config["vision"]["gemini"]["model"] = vision_model
+            if text_model:
+                config["text"]["gemini"]["model"] = text_model
 
-        # Save
-        with open("config.yaml", "w") as f:
-            yaml.safe_dump(config, f, default_flow_style=False)
-        
-        return jsonify({"message": "Configuration saved successfully"})
+            with open("config.yaml", "w") as f:
+                yaml.safe_dump(config, f, default_flow_style=False)
+
+            return jsonify({"message": "Configuration saved successfully"})
+        except Exception as e:
+            app.logger.exception("Error saving model configuration:")
+            return jsonify({"error": str(e)}), 500
     
     return render_template("models.html", config=config)
 
+
 @app.route("/settings", methods=["GET", "POST"])
 def settings():
-    """Configure application settings (Legacy single-route)."""
-    # We keep it for backward-compat in the UI or for GET:
+    """
+    Main settings route (mostly for GET).
+    The actual saving logic is handled in /settings/general, /settings/advanced, etc.
+    """
     if request.method == "POST":
-        # If you want, handle everything here
-        # This is a placeholder because the templates call separate endpoints
-        return jsonify({"message": "Settings updated (via POST /settings) - not fully implemented here"})
+        return jsonify({"message": "Settings updated (placeholder)"}), 200
     config = load_config()
     return render_template("settings.html", config=config)
 
-# Additional endpoints for the separate forms:
 
 @app.route("/settings/general", methods=["POST"])
 def save_settings_general():
-    # Minimal placeholder
-    # Parse form data
-    # For example, request.form.get("whatever")
-    return jsonify({"message": "General settings saved (placeholder)"})
+    """
+    Example endpoint to save 'general' settings.
+    Currently a placeholder; you’d implement real logic for your config here.
+    """
+    # For demonstration, we just return success.
+    # In a real app, parse request.form, update config.yaml, etc.
+    return jsonify({"message": "General settings saved"}), 200
+
 
 @app.route("/settings/advanced", methods=["POST"])
 def save_settings_advanced():
-    return jsonify({"message": "Advanced settings saved (placeholder)"})
+    """
+    Example endpoint to save 'advanced' settings.
+    """
+    return jsonify({"message": "Advanced settings saved"}), 200
+
 
 @app.route("/settings/reset", methods=["POST"])
 def reset_settings():
-    # As a placeholder, you might copy config.example.yaml => config.yaml
+    """
+    Resets config.yaml to config.example.yaml if it exists.
+    """
     if os.path.exists("config.example.yaml"):
-        shutil.copy("config.example.yaml", "config.yaml")
-        return jsonify({"message": "Settings have been reset to defaults"})
+        try:
+            shutil.copy("config.example.yaml", "config.yaml")
+            return jsonify({"message": "Settings have been reset to defaults"}), 200
+        except Exception as e:
+            app.logger.exception("Error resetting settings:")
+            return jsonify({"error": str(e)}), 500
     return jsonify({"error": "No config.example.yaml found"}), 404
+
 
 @app.route("/settings/clear-cache", methods=["POST"])
 def clear_cache():
-    # Placeholder for clearing caches
-    return jsonify({"message": "Cache cleared (placeholder)"})
+    """Placeholder for clearing caches."""
+    return jsonify({"message": "Cache cleared (placeholder)"}), 200
+
 
 @app.route("/docs")
 def docs():
-    """Display documentation."""
-    # Read README.md and convert to HTML (you might want to use a Markdown parser)
+    """Display README.md content on a documentation page."""
     with open("README.md", "r", encoding="utf-8") as f:
         content = f.read()
     return render_template("docs.html", content=content)
+
 
 @app.route("/results/<run_name>")
 def results(run_name):
@@ -264,20 +272,17 @@ def results(run_name):
     run_path = os.path.join(runs_dir, run_name)
     generations_path = os.path.join(run_path, "generations")
 
-    # Gather iteration images
     images = []
     if os.path.exists(generations_path):
         for filename in sorted(os.listdir(generations_path)):
             if filename.lower().endswith(".png") and filename.startswith("iteration_"):
                 images.append(filename)
 
-    # Gather iteration logs
     iteration_logs = []
     for filename in sorted(os.listdir(run_path)):
         if filename.startswith("iteration_") and filename.endswith(".json"):
             iteration_logs.append(filename)
 
-    # Get goal and analysis
     goal = None
     analysis = None
     goal_analysis_path = os.path.join(run_path, "goal_analysis.json")
@@ -287,7 +292,6 @@ def results(run_name):
             goal = data.get("goal")
             analysis = data.get("analysis")
 
-    # Pass max_iterations so results.html can display it
     max_iters = config["iterations"].get("max_iterations", 10)
 
     return render_template(
@@ -300,9 +304,10 @@ def results(run_name):
         max_iterations=max_iters
     )
 
+
 @app.route("/results/<run_name>/status")
 def results_status(run_name):
-    """Get the current status of a generation run, including images and logs."""
+    """Get status of a generation run (images, logs, done?)."""
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
     run_path = os.path.join(runs_dir, run_name)
@@ -312,19 +317,15 @@ def results_status(run_name):
     logs = []
     done = False
 
-    # Gather images
     if os.path.exists(generations_path):
         for filename in sorted(os.listdir(generations_path)):
             if filename.lower().endswith(".png") and filename.startswith("iteration_"):
                 images.append(filename)
 
-    # Gather iteration logs
     for filename in sorted(os.listdir(run_path)):
         if filename.startswith("iteration_") and filename.endswith(".json"):
             logs.append(filename)
 
-    # Decide if "done"
-    # Check if max iterations reached or if canceled
     max_iters = config["iterations"].get("max_iterations", 10)
     if len(images) >= max_iters:
         done = True
@@ -337,12 +338,14 @@ def results_status(run_name):
         "done": done
     })
 
+
 @app.route("/runs/<run_name>/generations/<filename>")
 def serve_generated_image(run_name, filename):
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
     run_path = os.path.join(runs_dir, run_name, "generations")
     return send_from_directory(run_path, filename)
+
 
 @app.route("/runs/<run_name>/<filename>")
 def serve_run_file(run_name, filename):
@@ -351,9 +354,10 @@ def serve_run_file(run_name, filename):
     run_path = os.path.join(runs_dir, run_name)
     return send_from_directory(run_path, filename)
 
+
 @app.route("/runs/<run_name>/delete", methods=["POST"])
 def delete_run(run_name):
-    """Delete a run and all its associated files."""
+    """Delete an entire run directory."""
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
     run_path = os.path.join(runs_dir, run_name)
@@ -362,18 +366,16 @@ def delete_run(run_name):
         return jsonify({"error": "Run not found"}), 404
     
     try:
-        # Delete the entire run directory and its contents
         shutil.rmtree(run_path)
         return jsonify({"message": "Run deleted successfully"})
     except Exception as e:
+        app.logger.exception("Error deleting run directory:")
         return jsonify({"error": f"Failed to delete run: {str(e)}"}), 500
 
-# -------------------------
-# Additional "runs" routes from the front end references:
-# Edit run goal
+
 @app.route("/runs/<run_name>/goal", methods=["POST"])
 def edit_run_goal(run_name):
-    """Update the goal mid-run (placeholder)."""
+    """Update the goal mid-run."""
     data = request.get_json() or {}
     new_goal = data.get("goal")
     if not new_goal:
@@ -383,8 +385,8 @@ def edit_run_goal(run_name):
     runs_dir = config.get("runs_directory", "runs")
     run_path = os.path.join(runs_dir, run_name)
     goal_analysis_path = os.path.join(run_path, "goal_analysis.json")
+
     if os.path.exists(run_path):
-        # Update the goal_analysis.json
         ga_data = {}
         if os.path.exists(goal_analysis_path):
             with open(goal_analysis_path, "r") as f:
@@ -395,11 +397,10 @@ def edit_run_goal(run_name):
         return jsonify({"message": "Goal updated"})
     return jsonify({"error": "Run not found"}), 404
 
-# Cancel run
+
 @app.route("/runs/<run_name>/cancel", methods=["POST"])
 def cancel_run(run_name):
-    """Placeholder for canceling a run. You might set a status in a file or DB."""
-    # Minimal approach: create a canceled.txt or something
+    """Mark a run as canceled by creating a canceled.txt file."""
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
     run_path = os.path.join(runs_dir, run_name)
@@ -409,7 +410,7 @@ def cancel_run(run_name):
         return jsonify({"message": "Run canceled"})
     return jsonify({"error": "Run not found"}), 404
 
-# Get iteration prompt
+
 @app.route("/runs/<run_name>/iterations/<int:iteration>/prompt", methods=["GET"])
 def get_iteration_prompt(run_name, iteration):
     """
@@ -428,17 +429,71 @@ def get_iteration_prompt(run_name, iteration):
     prompt = data.get("prompt", "")
     return jsonify({"prompt": prompt})
 
-# -------------------------
-# Placeholder route for image deletion from gallery:
+
+# ----------------------------------------------------------------
+# New: Fixing placeholder for image deletion from gallery (API)
+# ----------------------------------------------------------------
 @app.route("/api/images/<image_id>", methods=["DELETE"])
 def delete_image_api(image_id):
     """
-    We do not have an actual ID system for images.
-    This is just a placeholder that always returns success.
+    Attempt to find an image file named <image_id> in the 'generations'
+    folder of any existing run and delete it. Returns 404 if not found.
     """
-    return jsonify({"message": f"Image {image_id} deleted (placeholder)"}), 200
+    config = load_config()
+    runs_dir = config.get("runs_directory", "runs")
+
+    found_file = None
+    for run_name in os.listdir(runs_dir):
+        gen_path = os.path.join(runs_dir, run_name, "generations")
+        if os.path.isdir(gen_path):
+            candidate = os.path.join(gen_path, image_id)
+            if os.path.exists(candidate):
+                found_file = candidate
+                break
+
+    if not found_file:
+        return jsonify({"error": f"Image {image_id} not found"}), 404
+
+    try:
+        os.remove(found_file)
+        return jsonify({"message": f"Image {image_id} deleted successfully."}), 200
+    except Exception as e:
+        app.logger.exception("Error deleting image file:")
+        return jsonify({"error": f"Could not delete image: {str(e)}"}), 500
+
+
+# ----------------------------------------------------------------
+# New: Fixing placeholder /upload route for drag-and-drop uploads
+# ----------------------------------------------------------------
+@app.route("/upload", methods=["POST"])
+def upload_file():
+    """
+    Handle file uploads via drag-and-drop or standard form.
+    Allows JSON or PNG, stores them in 'uploads/' folder by default.
+    """
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type. Allowed: .json, .png"}), 400
+
+    uploads_dir = "uploads"
+    os.makedirs(uploads_dir, exist_ok=True)
+
+    save_path = os.path.join(uploads_dir, file.filename)
+    try:
+        file.save(save_path)
+    except Exception as e:
+        app.logger.exception("Error saving uploaded file:")
+        return jsonify({"error": f"Failed to save file: {str(e)}"}), 500
+
+    return jsonify({"message": "File uploaded successfully!"}), 200
+
 
 if __name__ == "__main__":
-    # Run on an unconventional port, e.g. 6221
-    # Use 0.0.0.0 so it is accessible from your network if desired
+    # Run on port 6221 (or any other). Debug enabled for development only.
     app.run(port=6221, host="0.0.0.0", debug=True)

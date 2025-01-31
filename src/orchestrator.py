@@ -9,8 +9,7 @@ from .ollama_text_utils import (
     understand_goal,
     create_initial_prompt,
     refine_prompt,
-    generate_text_ollama,
-    generate_text_gemini
+    extract_prompt_tags
 )
 
 def calculate_prompt_similarity(prompt1, prompt2):
@@ -25,134 +24,9 @@ def evaluate_quality(analysis, current_prompt, previous_prompt, config, iteratio
     if previous_analyses is None:
         previous_analyses = []
 
-    # First iteration: Baseline analysis
-    if iteration == 1:
-        return True, "Initial iteration establishing baseline image and prompt effectiveness"
-
-    # Second iteration: Comparative analysis
-    if iteration == 2:
-        prompt_changes = analyze_prompt_differences(previous_prompt, current_prompt)
-        image_impact = compare_analyses(previous_analyses[-1], analysis)
-        return True, f"Analyzing prompt-to-image relationship: {prompt_changes} resulted in {image_impact}"
-
-    # Third iteration: Learning and synthesis
-    if iteration == 3:
-        synthesis = synthesize_learning(previous_analyses, analysis, previous_prompt, current_prompt)
-        return True, f"Synthesizing learnings from previous iterations: {synthesis}"
-
-    # After third iteration: Comprehensive evaluation
-    success_phrases = [
-        "perfectly matches",
-        "excellent match",
-        "captures all elements",
-        "achieves the goal",
-        "outstanding representation"
-    ]
-    if any(phrase in analysis.lower() for phrase in success_phrases):
-        return False, "Analysis indicates perfect match based on comprehensive evaluation"
-
-    # Check for substantial improvements needed
-    improvement_phrases = [
-        "could be improved",
-        "needs adjustment",
-        "would benefit from",
-        "consider adding",
-        "should include"
-    ]
-    if not any(phrase in analysis.lower() for phrase in improvement_phrases):
-        return False, "No substantial improvements needed after thorough analysis"
-
-    return True, "Continuing iterations based on identified areas for enhancement"
-
-def analyze_prompt_differences(prev_prompt, curr_prompt):
-    """Analyze how the prompt changed and what we're testing."""
-    if not prev_prompt:
-        return "Initial prompt exploration"
-    
-    # Split prompts into words for comparison
-    prev_words = set(prev_prompt.lower().split())
-    curr_words = set(curr_prompt.lower().split())
-    
-    added = curr_words - prev_words
-    removed = prev_words - curr_words
-    
-    changes = []
-    if added:
-        changes.append(f"Added emphasis on: {', '.join(added)}")
-    if removed:
-        changes.append(f"Reduced emphasis on: {', '.join(removed)}")
-    
-    return "; ".join(changes) if changes else "Refined existing elements"
-
-def compare_analyses(prev_analysis, curr_analysis):
-    """Compare how the image changed based on the analyses."""
-    if not prev_analysis:
-        return "Initial image assessment"
-    
-    # Look for key phrases indicating changes
-    improvements = []
-    regressions = []
-    
-    # Common improvement indicators
-    better_phrases = ["better", "improved", "enhanced", "stronger", "clearer"]
-    worse_phrases = ["less", "weaker", "reduced", "lost", "missing"]
-    
-    for phrase in better_phrases:
-        if phrase in curr_analysis.lower():
-            improvements.append(phrase)
-    
-    for phrase in worse_phrases:
-        if phrase in curr_analysis.lower():
-            regressions.append(phrase)
-    
-    if improvements and not regressions:
-        return f"Improvements noted in: {', '.join(improvements)}"
-    elif regressions and not improvements:
-        return f"Regressions noted in: {', '.join(regressions)}"
-    elif improvements and regressions:
-        return f"Mixed results: improved {', '.join(improvements)} but regressed in {', '.join(regressions)}"
-    else:
-        return "Subtle changes with no clear improvement or regression"
-
-def synthesize_learning(prev_analyses, curr_analysis, prev_prompt, curr_prompt):
-    """Synthesize what we've learned from the first three iterations."""
-    if len(prev_analyses) < 2:
-        return "Insufficient data for synthesis"
-    
-    # Analyze prompt evolution
-    prompt_evolution = analyze_prompt_differences(prev_prompt, curr_prompt)
-    
-    # Look for patterns in the analyses
-    consistent_issues = []
-    improvements = []
-    
-    # Common phrases to track
-    issue_phrases = ["missing", "lacks", "needs", "could use", "should have"]
-    improvement_phrases = ["better", "improved", "enhanced", "stronger", "clearer"]
-    
-    # Track issues and improvements across all analyses
-    for analysis in [*prev_analyses, curr_analysis]:
-        for phrase in issue_phrases:
-            if phrase in analysis.lower():
-                consistent_issues.append(phrase)
-        for phrase in improvement_phrases:
-            if phrase in analysis.lower():
-                improvements.append(phrase)
-    
-    # Count frequencies to identify patterns
-    from collections import Counter
-    consistent_issues = [issue for issue, count in Counter(consistent_issues).items() if count >= 2]
-    recurring_improvements = [imp for imp, count in Counter(improvements).items() if count >= 2]
-    
-    synthesis = []
-    if consistent_issues:
-        synthesis.append(f"Persistent challenges: {', '.join(consistent_issues)}")
-    if recurring_improvements:
-        synthesis.append(f"Consistent improvements: {', '.join(recurring_improvements)}")
-    if prompt_evolution:
-        synthesis.append(f"Prompt evolution: {prompt_evolution}")
-    
-    return "; ".join(synthesis) if synthesis else "No clear patterns identified yet"
+    # Simplified logic if you want (this is just a placeholder).
+    # For demonstration, we always continue up to max_iterations in this code.
+    return True, "Continuing"
 
 def run_iterations(config, goal, run_directory, progress_callback=None):
     """Main iteration loop for generating and refining images."""
@@ -172,18 +46,20 @@ def run_iterations(config, goal, run_directory, progress_callback=None):
     # Update config to use the generations directory
     config["comfyui"]["output_dir"] = generations_dir
     
+    # 1. Initial goal analysis
     if progress_callback:
         progress_callback({
             'stage': 'analysis',
             'message': 'Analyzing goal...',
             'progress': 5
         })
-    
-    # 1. Initial goal analysis
-    analysis = understand_goal(goal, config)
-    print("Goal Analysis:")
-    print(analysis)
 
+    analysis_dict = understand_goal(goal, config)
+    analysis_text = analysis_dict["response"]
+    print("Goal Analysis:")
+    print(analysis_text)
+
+    # 2. Create initial T5 prompt
     if progress_callback:
         progress_callback({
             'stage': 'prompt',
@@ -191,23 +67,52 @@ def run_iterations(config, goal, run_directory, progress_callback=None):
             'progress': 10
         })
 
-    # 2. Create initial T5 prompt
-    current_prompt = create_initial_prompt(goal, analysis, config)
-    print(f"\nInitial Prompt: {current_prompt}")
-    
-    # Save goal analysis
+    initial_prompt_dict = create_initial_prompt(goal, analysis_text, config)
+    raw_initial_response = initial_prompt_dict["response"]
+    # Extract the actual <prompt>...</prompt> content
+    initial_prompt_text = extract_prompt_tags(raw_initial_response)
+    if not initial_prompt_text:
+        initial_prompt_text = raw_initial_response.strip()
+
+    # Save iteration_0 with text interactions
+    iteration_0_data = {
+        "iteration": 0,
+        "goal": goal,
+        "text_interactions": [
+            {
+                "stage": "understand_goal",
+                "system_prompt": analysis_dict["system_prompt"],
+                "user_prompt": analysis_dict["user_prompt"],
+                "response": analysis_dict["response"]
+            },
+            {
+                "stage": "create_initial_prompt",
+                "system_prompt": initial_prompt_dict["system_prompt"],
+                "user_prompt": initial_prompt_dict["user_prompt"],
+                "response": initial_prompt_dict["response"]
+            }
+        ],
+        "timestamp": datetime.now().isoformat()
+    }
+    iteration_0_path = os.path.join(run_directory, "iteration_0.json")
+    with open(iteration_0_path, "w", encoding="utf-8") as f:
+        json.dump(iteration_0_data, f, indent=2)
+
+    # Save a simpler goal_analysis.json for the UI
     goal_analysis_path = os.path.join(run_directory, "goal_analysis.json")
     with open(goal_analysis_path, "w", encoding="utf-8") as f:
         json.dump({
             "goal": goal,
-            "analysis": analysis,
-            "initial_prompt": current_prompt,
+            "analysis": analysis_text,
+            "initial_prompt": initial_prompt_text,
             "timestamp": datetime.now().isoformat()
         }, f, indent=2)
     
     iteration = 0
     max_iters = config["iterations"]["max_iterations"]
     previous_prompt = None
+
+    current_prompt = initial_prompt_text
 
     while iteration < max_iters:
         iteration += 1
@@ -236,40 +141,87 @@ def run_iterations(config, goal, run_directory, progress_callback=None):
                 'current_image': image_path
             })
 
-        # 2) Get unbiased description of the image
-        config['current_goal'] = goal  # Add goal to config for second stage
-        image_description = analyze_image(image_path, config, stage="describe")
+        # 2) Unbiased description
+        config['current_goal'] = goal
+        describe_dict = analyze_image(image_path, config, stage="describe")
+        image_description = describe_dict["response"]
         print(f"Image Description: {image_description}")
 
-        # 3) Compare image to goal
-        config['image_description'] = image_description  # Add description for comparison
-        alignment_analysis = analyze_image(image_path, config, stage="analyze")
+        # 3) Compare to goal
+        config['image_description'] = image_description
+        analyze_dict = analyze_image(image_path, config, stage="analyze")
+        alignment_analysis = analyze_dict["response"]
         print(f"Alignment Analysis: {alignment_analysis}")
 
         # 4) Log iteration data
-        log_data = {
+        iteration_log_path = os.path.join(run_directory, f"iteration_{iteration}.json")
+
+        # 5) Refine prompt for next iteration
+        if progress_callback:
+            progress_callback({
+                'stage': 'refinement',
+                'message': f'Refining prompt for iteration {iteration + 1}...',
+                'progress': 10 + (iteration * 90 / max_iters),
+                'iteration': iteration,
+                'max_iterations': max_iters
+            })
+
+        refined_dict = refine_prompt(
+            current_prompt,
+            goal,
+            image_description,
+            alignment_analysis,
+            config
+        )
+        raw_refined_response = refined_dict["response"]
+        refined_prompt = extract_prompt_tags(raw_refined_response)
+        if not refined_prompt:
+            refined_prompt = raw_refined_response.strip()
+
+        # Store everything in iteration_{iteration}.json
+        iteration_data = {
             "iteration": iteration,
             "goal": goal,
             "prompt": current_prompt,
             "image_path": image_path,
             "image_description": image_description,
             "alignment_analysis": alignment_analysis,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "vision_interactions": [
+                {
+                    "stage": "describe",
+                    "system_prompt": describe_dict["system_prompt"],
+                    "user_prompt": describe_dict["user_prompt"],
+                    "response": describe_dict["response"]
+                },
+                {
+                    "stage": "analyze",
+                    "system_prompt": analyze_dict["system_prompt"],
+                    "user_prompt": analyze_dict["user_prompt"],
+                    "response": analyze_dict["response"]
+                }
+            ],
+            "text_interactions": [
+                {
+                    "stage": "refine_prompt",
+                    "system_prompt": refined_dict["system_prompt"],
+                    "user_prompt": refined_dict["user_prompt"],
+                    "response": refined_dict["response"]
+                }
+            ],
+            "next_prompt": refined_prompt
         }
 
-        # Save JSON log
-        iteration_log_path = os.path.join(run_directory, f"iteration_{iteration}.json")
         with open(iteration_log_path, "w", encoding="utf-8") as f:
-            json.dump(log_data, f, indent=2)
+            json.dump(iteration_data, f, indent=2)
 
-        # 5) Check if we've achieved the goal
+        # 6) Check for success indicators (optional)
         success_indicators = [
             "perfectly matches",
             "all elements align",
             "complete match",
             "fully achieves the goal"
         ]
-        
         if any(indicator in alignment_analysis.lower() for indicator in success_indicators):
             if progress_callback:
                 progress_callback({
@@ -283,30 +235,8 @@ def run_iterations(config, goal, run_directory, progress_callback=None):
             print("\nGoal achieved successfully!")
             break
 
-        # 6) Create refined prompt for next iteration
-        if progress_callback:
-            progress_callback({
-                'stage': 'refinement',
-                'message': f'Refining prompt for iteration {iteration + 1}...',
-                'progress': 10 + (iteration * 90 / max_iters),
-                'iteration': iteration,
-                'max_iterations': max_iters
-            })
-
-        previous_prompt = current_prompt
-        current_prompt = refine_prompt(
-            current_prompt,
-            goal,
-            image_description,
-            alignment_analysis,
-            config
-        )
-        print(f"Refined prompt: {current_prompt}")
-        log_data["next_prompt"] = current_prompt
-
-        # Update the log with the new prompt
-        with open(iteration_log_path, "w", encoding="utf-8") as f:
-            json.dump(log_data, f, indent=2)
+        # Continue
+        current_prompt = refined_prompt
 
     if progress_callback:
         progress_callback({
@@ -318,4 +248,4 @@ def run_iterations(config, goal, run_directory, progress_callback=None):
             'status': 'complete'
         })
 
-    print("\nAll iterations completed.") 
+    print("\nAll iterations completed.")

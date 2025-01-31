@@ -31,8 +31,6 @@ def allowed_file(filename):
 def index():
     """
     Display the main dashboard page (recent runs).
-    Now only handles GET for listing runs. The generation
-    POST logic is moved to /create_run.
     """
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
@@ -82,14 +80,12 @@ def index():
 def gallery():
     """
     Display all generated images across all runs, if you need a ‘gallery.’
-    This route must exist because base.html calls url_for('gallery').
     """
     config = load_config()
     runs_dir = config.get("runs_directory", "runs")
 
     images = []
     if os.path.exists(runs_dir):
-        # Go through each run folder and gather .png images
         for run_name in sorted(os.listdir(runs_dir), reverse=True):
             run_path = os.path.join(runs_dir, run_name)
             if os.path.isdir(run_path):
@@ -106,18 +102,13 @@ def gallery():
 
 
 # ----------------------------------------------------------------
-# New Route: /create_run (POST) - Quickly creates a run
+# New Route: /create_run (POST) 
 # ----------------------------------------------------------------
 
 @app.route("/create_run", methods=["POST"])
 def create_run():
     """
-    Receives form data for generating an image. Instead of blocking with
-    run_iterations, it simply:
-      1) Creates run directory
-      2) Saves user input + config
-      3) Returns { run_name: ... }
-    The actual generation is triggered separately with /start_run/<run_name>.
+    Receives form data for generating an image run.
     """
     try:
         config = load_config()
@@ -166,7 +157,7 @@ def create_run():
 
 def background_run_iterations(run_path):
     """
-    This function runs in a thread, calls run_iterations with 
+    Runs in a thread, calls run_iterations with 
     the stored config & goal from config_dump.json
     """
     try:
@@ -215,16 +206,26 @@ def results(run_name):
     run_path = os.path.join(runs_dir, run_name)
     generations_path = os.path.join(run_path, "generations")
 
+    # Collect the PNG images
     images = []
     if os.path.exists(generations_path):
         for filename in sorted(os.listdir(generations_path)):
             if filename.lower().endswith(".png") and filename.startswith("iteration_"):
                 images.append(filename)
 
+    # Collect iteration logs
     iteration_logs = []
+    iteration_data = []
     for filename in sorted(os.listdir(run_path)):
         if filename.startswith("iteration_") and filename.endswith(".json"):
             iteration_logs.append(filename)
+
+    # Load each iteration JSON
+    for log_file in iteration_logs:
+        log_path = os.path.join(run_path, log_file)
+        with open(log_path, "r") as f:
+            iteration_json = json.load(f)
+        iteration_data.append(iteration_json)
 
     goal = None
     analysis = None
@@ -242,13 +243,16 @@ def results(run_name):
             cd = json.load(f)
             max_iters = cd["config"]["iterations"].get("max_iterations", 10)
 
-    return render_template("results.html",
-                           run_name=run_name,
-                           images=images,
-                           logs=iteration_logs,
-                           goal=goal,
-                           analysis=analysis,
-                           max_iterations=max_iters)
+    return render_template(
+        "results.html",
+        run_name=run_name,
+        images=images,
+        logs=iteration_logs,
+        goal=goal,
+        analysis=analysis,
+        max_iterations=max_iters,
+        iteration_data=iteration_data
+    )
 
 @app.route("/results/<run_name>/status")
 def results_status(run_name):
@@ -400,6 +404,9 @@ def models():
 
 @app.route("/workflows", methods=["GET", "POST"])
 def workflows():
+    def allowed_file(filename):
+        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ['json']
+
     if request.method == "POST":
         try:
             if 'file' not in request.files:

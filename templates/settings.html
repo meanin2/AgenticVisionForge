@@ -2,6 +2,8 @@
 
 {% block title %}Settings - AgenticVisionForge{% endblock %}
 
+{% block page_name %}data-page="settings"{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4">
     <!-- Header -->
@@ -21,7 +23,6 @@
                 General Settings
             </h3>
 
-            <!-- First form for general settings -->
             <form class="space-y-6" id="general-settings-form">
                 <!-- Default Output Directory -->
                 <div>
@@ -196,103 +197,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-async function saveSettings(form, endpoint) {
-    const formData = new FormData(form);
-    const submitButton = form.querySelector('button[type="submit"]');
-    
-    // Disable submit button and show loading state
-    submitButton.disabled = true;
-    const originalText = submitButton.textContent;
-    submitButton.innerHTML = `
-        <div class="spinner inline-block mr-2"></div>
-        Saving...
-    `;
-    
-    try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to save settings');
-        }
-        
-        const data = await response.json();
-        showToast(data.message || 'Settings saved successfully!', 'success');
-        
-    } catch (error) {
-        showToast('Error: ' + error.message, 'error');
-    } finally {
-        // Reset button state
-        submitButton.disabled = false;
-        submitButton.textContent = originalText;
-    }
-}
-
-// General settings form
-document.getElementById('general-settings-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    saveSettings(this, '/settings/general');
-});
-
-// Advanced settings form
-document.getElementById('advanced-settings-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    saveSettings(this, '/settings/advanced');
-});
-
-function confirmReset() {
-    if (confirm('Are you sure you want to reset all settings to their default values? This action cannot be undone.')) {
-        resetSettings();
-    }
-}
-
-async function resetSettings() {
-    try {
-        const response = await fetch('/settings/reset', {
-            method: 'POST'
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to reset settings');
-        }
-        
-        const data = await response.json();
-        showToast(data.message || 'Settings reset to defaults', 'success');
-        setTimeout(() => window.location.reload(), 1500);
-        
-    } catch (error) {
-        showToast('Error: ' + error.message, 'error');
-    }
-}
-
-function confirmClearCache() {
-    if (confirm('Are you sure you want to clear all cached data? This action cannot be undone.')) {
-        clearCache();
-    }
-}
-
-async function clearCache() {
-    try {
-        const response = await fetch('/settings/clear-cache', {
-            method: 'POST'
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to clear cache');
-        }
-        
-        const data = await response.json();
-        showToast(data.message || 'Cache cleared', 'success');
-        
-    } catch (error) {
-        showToast('Error: ' + error.message, 'error');
-    }
-}
-</script>
 {% endblock %}

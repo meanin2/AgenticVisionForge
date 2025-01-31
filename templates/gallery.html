@@ -2,6 +2,8 @@
 
 {% block title %}Gallery - AgenticVisionForge{% endblock %}
 
+{% block page_name %}data-page="gallery"{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4">
   <!-- Header -->
@@ -39,48 +41,7 @@
           </svg>
         </div>
       </div>
-
-      <!-- Example Filter Dropdown (Optional) -->
-      <!-- 
-      <div class="relative" x-data="{ open: false }">
-        <button
-          @click="open = !open"
-          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border
-                 border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-4
-                 focus:ring-blue-300 dark:bg-gray-700 dark:text-white
-                 dark:border-gray-600 dark:hover:bg-gray-600"
-        >
-          Filter
-        </button>
-        <div
-          x-show="open"
-          @click.away="open = false"
-          class="absolute z-10 mt-2 w-48 bg-white rounded-lg shadow-lg
-                 dark:bg-gray-700"
-        >
-          <div class="p-2">
-            ...
-          </div>
-        </div>
-      </div>
-      -->
     </div>
-
-    <!-- Batch Actions (Optional) -->
-    <!-- 
-    <div class="flex gap-2">
-      <button class="px-4 py-2 text-sm font-medium text-white bg-red-600
-                     rounded-lg hover:bg-red-700 focus:ring-4
-                     focus:ring-red-300">
-        Delete Selected
-      </button>
-      <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600
-                     rounded-lg hover:bg-blue-700 focus:ring-4
-                     focus:ring-blue-300">
-        Download Selected
-      </button>
-    </div>
-    -->
   </div>
 
   <!-- Image Grid -->
@@ -197,46 +158,4 @@
             class="absolute top-4 right-4 text-white text-2xl">&times;</button>
   </div>
 </div>
-
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-// Fullscreen image view
-function viewFullImage(url) {
-  const modal = document.getElementById('imageModal');
-  const img = document.getElementById('modalImage');
-  img.src = url;
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-}
-function closeImageModal() {
-  const modal = document.getElementById('imageModal');
-  modal.classList.add('hidden');
-  modal.classList.remove('flex');
-}
-
-function downloadImage(url, filename) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-// Search / filter
-document.getElementById('searchBox').addEventListener('input', function() {
-  const searchTerm = this.value.toLowerCase();
-  const imageCards = document.querySelectorAll('.image-card');
-  imageCards.forEach(card => {
-    const goalText = card.getAttribute('data-goal') || '';
-    if (goalText.includes(searchTerm)) {
-      card.classList.remove('hidden');
-    } else {
-      card.classList.add('hidden');
-    }
-  });
-});
-</script>
 {% endblock %}

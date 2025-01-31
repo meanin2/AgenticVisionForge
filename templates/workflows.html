@@ -2,6 +2,8 @@
 
 {% block title %}Workflows - AgenticVisionForge{% endblock %}
 
+{% block page_name %}data-page="workflows"{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4">
   <!-- Header -->
@@ -82,7 +84,6 @@
         <div class="p-6">
           <!-- Validation Status -->
           <div class="mb-6">
-            <!-- Placeholder for actual validation logic -->
             {% set is_valid = True %}
             <div class="flex items-center">
               <div class="flex-shrink-0">
@@ -232,79 +233,4 @@
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-const dropZone = document.getElementById('drop-zone');
-['dragenter','dragover','dragleave','drop'].forEach(eName => {
-  dropZone.addEventListener(eName, preventDefaults, false);
-});
-function preventDefaults(e){ e.preventDefault(); e.stopPropagation(); }
-['dragenter','dragover'].forEach(eName => {
-  dropZone.addEventListener(eName, ()=>highlight(true), false);
-});
-['dragleave','drop'].forEach(eName => {
-  dropZone.addEventListener(eName, ()=>highlight(false), false);
-});
-function highlight(on) {
-  if(on){
-    dropZone.classList.add('border-blue-500','bg-blue-50','dark:bg-blue-900/20');
-  } else {
-    dropZone.classList.remove('border-blue-500','bg-blue-50','dark:bg-blue-900/20');
-  }
-}
-dropZone.addEventListener('drop', handleDrop, false);
-function handleDrop(e) {
-  const dt = e.dataTransfer;
-  const files = dt.files;
-  handleFiles(files);
-}
-function handleFileSelect(input){
-  handleFiles(input.files);
-}
-function handleFiles(files){
-  if(files.length>0){
-    const file=files[0];
-    if(file.type==='application/json' || file.name.toLowerCase().endsWith('.json')){
-      uploadWorkflow(file);
-    } else {
-      showToast('Please upload a JSON file','error');
-    }
-  }
-}
-async function uploadWorkflow(file){
-  const formData=new FormData();
-  formData.append('file',file);
-  try{
-    const response=await fetch('/workflows',{method:'POST',body:formData});
-    if(!response.ok) throw new Error('Failed to upload workflow');
-    showToast('Workflow uploaded successfully','success');
-    setTimeout(()=>window.location.reload(),1000);
-  }catch(err){
-    showToast('Error: '+err.message,'error');
-  }
-}
-function downloadWorkflow(){
-  const a=document.createElement('a');
-  a.href='/workflows/download';
-  a.download='workflow.json';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-async function deleteWorkflow(){
-  if(!confirm('Are you sure you want to delete this workflow? This action cannot be undone.')){
-    return;
-  }
-  try{
-    const response=await fetch('/workflows/delete',{method:'POST'});
-    if(!response.ok) throw new Error('Failed to delete workflow');
-    showToast('Workflow deleted successfully','success');
-    setTimeout(()=>window.location.reload(),1000);
-  }catch(err){
-    showToast('Error: '+err.message,'error');
-  }
-}
-</script>
 {% endblock %}
